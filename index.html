@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logic Escape – Il Caveau Booleano (VR)</title>
+<style>
+  html,body{margin:0;height:100%;background:#05080f;color:#e8eefc;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+  canvas{display:block}
+  #ui{position:fixed;left:16px;top:16px;max-width:420px;background:rgba(8,12,22,.88);border:1px solid #2a3a5c;border-radius:14px;padding:16px 18px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #ui h1{margin:0 0 4px;font-size:20px;color:#ffd34d;letter-spacing:.5px}
+  #ui p{margin:6px 0;font-size:13px;line-height:1.45;color:#b9c6e4}
+  #vrBtn{display:block;width:100%;margin:12px 0 10px;padding:16px;font-size:20px;font-weight:800;border:0;border-radius:12px;background:#00FF7F;color:#03140b;cursor:pointer}
+  #vrBtn:disabled{background:#3a4560;color:#9aa6c0;cursor:not-allowed}
+  .row{display:flex;gap:6px;flex-wrap:wrap}
+  .row button{flex:1;padding:9px 6px;font-size:14px;font-weight:700;border-radius:9px;border:1px solid #3b4f7a;background:#14203a;color:#e8eefc;cursor:pointer}
+  .row button:hover{background:#1e2f55}
+  #toggleUi{position:fixed;right:16px;top:16px;padding:8px 12px;border-radius:9px;border:1px solid #3b4f7a;background:#14203a;color:#e8eefc;cursor:pointer;font-weight:700}
+  kbd{background:#1c2a48;border-radius:4px;padding:0 5px;font-size:12px}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="ui">
+  <h1>LOGIC ESCAPE · Il Caveau Booleano</h1>
+  <p>Gioco di logica booleana in VR per Meta Quest 3. Funziona con le mani (basta toccare leve e pulsanti) o con i controller (raggio + grilletto).</p>
+  <button id="vrBtn" disabled>Verifica supporto VR…</button>
+  <p><b>Livello (docente):</b></p>
+  <div class="row">
+    <button data-level="0">1 · AND</button>
+    <button data-level="1">2 · OR+NOT</button>
+    <button data-level="2">3 · Chip</button>
+    <button data-level="3">4 · Caveau</button>
+  </div>
+  <div class="row" style="margin-top:6px"><button id="resetBtn">↺ Ricomincia livello</button><button id="audioBtn">🔊 Audio</button></div>
+  <p>Al PC: clicca leve e chip, trascina per ruotare la vista, tasti <kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd> per le leve, <kbd>1</kbd>–<kbd>4</kbd> per i livelli.</p>
+  <p>Per la LIM: sul visore usa la funzione <b>Trasmetti</b> (Cast) verso il PC collegato alla lavagna.</p>
+</div>
+<button id="toggleUi">☰</button>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* =========================================================
+   COSTANTI E COLORI (alto contrasto + simboli per daltonici)
+   ========================================================= */
+const COL_TRUE = 0x00FF7F, COL_FALSE = 0xFF1E1E, COL_WAIT = 0xFFB020;
+const CSS_TRUE = '#00FF7F', CSS_FALSE = '#FF1E1E', CSS_WAIT = '#FFB020';
+const FONT = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+const TAU = Math.PI * 2;
+
+/* =========================================================
+   SINTETIZZATORE AUDIO PROCEDURALE (PCM a 44100 Hz, zero file)
+   ========================================================= */
+class ProceduralAudioSynthesizer {
+  constructor() { this.ctx = null; this.buffers = {}; this.enabled = true; }
+  init() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.85;
+    this.master.connect(this.ctx.destination);
+    this.generate();
+    this.startHum();
+  }
+  make(dur, fn) {
+    const SR = 44100, n = Math.floor(dur * SR);
+    const b = this.ctx.createBuffer(1, n, SR), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) { const v = fn(i / SR, i); d[i] = v > 1 ? 1 : v < -1 ? -1 : v; }
+    // micro fade-out anti-click
+    const f = Math.min(256, n);
+    for (let i = 0; i < f; i++) d[n - 1 - i] *= i / f;
+    return b;
+  }
+  generate() {
+    let seed = 12345;
+    const noise = () => { seed = (seed * 16807) % 2147483647; return seed / 1073741823.5 - 1; };
+    const tri = x => (2 / Math.PI) * Math.asin(Math.sin(x));
+    const SR = 44100;
+    const B = this.buffers;
+
+    B.click = this.make(0.07, t => noise() * 0.6 * Math.exp(-t / 0.004) + Math.sin(TAU * 2300 * t) * 0.45 * Math.exp(-t / 0.012));
+    B.on = this.make(0.2, t => {
+      const f = t < 0.07 ? 660 : 990;
+      return Math.sin(TAU * f * t) * 0.45 * Math.min(1, t / 0.003) * Math.exp(-t / 0.08) + noise() * 0.35 * Math.exp(-t / 0.004);
+    });
+    B.off = this.make(0.2, t => {
+      const f = t < 0.07 ? 520 : 330;
+      return Math.sin(TAU * f * t) * 0.45 * Math.min(1, t / 0.003) * Math.exp(-t / 0.08) + noise() * 0.35 * Math.exp(-t / 0.004);
+    });
+    B.error = this.make(0.55, t => {
+      const sq = Math.tanh(4 * Math.sin(TAU * 110 * t));
+      return sq * 0.28 * (0.6 + 0.4 * Math.sin(TAU * 12 * t)) * Math.min(1, t / 0.01) * Math.exp(-t / 0.3);
+    });
+    { let ph = 0;
+      B.alarm = this.make(0.9, t => {
+        const f = 720 + 320 * Math.sin(TAU * 3 * t); ph += f / SR;
+        return Math.tanh(3 * Math.sin(TAU * ph)) * 0.22 * Math.min(1, t / 0.02) * Math.min(1, (0.9 - t) / 0.1);
+      });
+    }
+    { let ph = 0;
+      B.unlock = this.make(0.6, t => {
+        let s = Math.sin(TAU * 70 * t) * 0.8 * Math.exp(-t / 0.05) + noise() * 0.4 * Math.exp(-t / 0.01);
+        if (t > 0.1 && t < 0.5) { const u = (t - 0.1) / 0.4; ph += (300 + 1900 * u) / SR; s += Math.sin(TAU * ph) * 0.3 * Math.sin(Math.PI * u); }
+        return s;
+      });
+    }
+    B.snap = this.make(0.3, t => noise() * 0.5 * Math.exp(-t / 0.006) + Math.sin(TAU * 1600 * t) * 0.3 * Math.exp(-t / 0.05) + Math.sin(TAU * 140 * t) * 0.55 * Math.exp(-t / 0.04));
+    { let ph = 0;
+      B.pop = this.make(0.18, t => { ph += (400 + 3000 * t) / SR; return Math.sin(TAU * ph) * 0.35 * Math.sin(Math.PI * t / 0.18); });
+    }
+    const arp = (notes, step, tail) => t => {
+      let s = 0;
+      notes.forEach((f, k) => {
+        const st = k * step;
+        if (t >= st) { const tt = t - st; s += tri(TAU * f * tt) * 0.2 * Math.min(1, tt / 0.005) * Math.exp(-tt / (k === notes.length - 1 ? tail : 0.3)); }
+      });
+      return s;
+    };
+    B.success = this.make(1.0, arp([659.25, 830.61, 987.77, 1318.51], 0.1, 0.5));
+    B.victory = this.make(2.6, arp([523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093.0], 0.12, 1.0));
+    // ronzio logico in loop (1 s = numero intero di cicli → loop perfetto, senza fade)
+    const n = 44100, hb = this.ctx.createBuffer(1, n, 44100), hd = hb.getChannelData(0);
+    for (let i = 0; i < n; i++) { const t = i / 44100; hd[i] = (Math.sin(TAU * 60 * t) * 0.5 + Math.sin(TAU * 120 * t) * 0.25 + Math.sin(TAU * 180 * t) * 0.12 + Math.sin(TAU * 240 * t) * 0.06) * 0.6; }
+    B.hum = hb;
+  }
+  play(name, vol = 1, rate = 1) {
+    if (!this.ctx || !this.enabled || !this.buffers[name]) return;
+    const s = this.ctx.createBufferSource(); s.buffer = this.buffers[name]; s.playbackRate.value = rate;
+    const g = this.ctx.createGain(); g.gain.value = vol;
+    s.connect(g); g.connect(this.master); s.start();
+  }
+  startHum() {
+    const s = this.ctx.createBufferSource(); s.buffer = this.buffers.hum; s.loop = true;
+    this.humGain = this.ctx.createGain(); this.humGain.gain.value = 0.0;
+    s.connect(this.humGain); this.humGain.connect(this.master); s.start();
+  }
+  setHum(level) {
+    if (!this.humGain) return;
+    this.humGain.gain.setTargetAtTime(this.enabled ? level : 0, this.ctx.currentTime, 0.15);
+  }
+  toggle() { this.enabled = !this.enabled; if (this.master) this.master.gain.value = this.enabled ? 0.85 : 0; return this.enabled; }
+}
+const synth = new ProceduralAudioSynthesizer();
+
+/* =========================================================
+   GRAFO LOGICO REATTIVO
+   ========================================================= */
+const GATE_FN = { AND: (a, b) => a && b, OR: (a, b) => a || b, XOR: (a, b) => a !== b, NOT: a => !a };
+
+class LogicNode { constructor(id) { this.id = id; this.value = false; this.inputs = []; } evaluate() { return this.value; } }
+class InputNode extends LogicNode {
+  constructor(id, v) { super(id); this.value = !!v; this.isInput = true; }
+  evaluate() { return this.value; }
+  tokens() { return [{ t: this.id, v: this.value, isVar: true }]; }
+}
+class GateNode extends LogicNode {
+  constructor(id, type, inputs) { super(id); this.type = type; this.inputs = inputs; }
+  evaluate() {
+    const v = this.inputs.map(n => n.evaluate());
+    this.value = this.type === 'NOT' ? !v[0] : GATE_FN[this.type](v[0], v[1]);
+    return this.value;
+  }
+  tokens(top) {
+    if (this.type === 'NOT') return [{ t: 'NOT ', op: true }, ...this.inputs[0].tokens(false)];
+    const body = [...this.inputs[0].tokens(false), { t: ' ' + this.type + ' ', op: true }, ...this.inputs[1].tokens(false)];
+    return top ? body : [{ t: '(' }, ...body, { t: ')' }];
+  }
+}
+class SocketNode extends LogicNode {
+  constructor(id, inputs) { super(id); this.inputs = inputs; this.chipType = null; this.type = 'SOCKET'; }
+  evaluate() {
+    const v = this.inputs.map(n => n.evaluate());
+    if (!this.chipType) { this.value = false; return false; }
+    this.value = this.chipType === 'NOT' ? !v[0] : GATE_FN[this.chipType](v[0], v[1]);
+    return this.value;
+  }
+  tokens(top) {
+    const body = [...this.inputs[0].tokens(false), this.chipType ? { t: ' ' + this.chipType + ' ', op: true } : { t: ' [ ? ] ', missing: true }, ...this.inputs[1].tokens(false)];
+    return top ? body : [{ t: '(' }, ...body, { t: ')' }];
+  }
+}
+class VaultOutputNode extends LogicNode {
+  constructor(src) { super('Y'); this.src = src; }
+  evaluate() { this.value = this.src.evaluate(); return this.value; }
+  tokens() { return this.src.tokens(true); }
+}
+
+/* =========================================================
+   LIVELLI
+   ========================================================= */
+const LEVELS = [
+  { title: 'Livello 1 · Porta AND',
+    hint: 'Porta Y a 1. La porta AND dà 1 solo se TUTTI i suoi ingressi valgono 1.',
+    inputs: { A: 0, B: 0 },
+    build: I => new GateNode('g1', 'AND', [I.A, I.B]) },
+  { title: 'Livello 2 · OR + NOT',
+    hint: 'Attenzione: C parte da 1! OR dà 1 se ALMENO un ingresso è 1. NOT inverte il valore.',
+    inputs: { A: 0, B: 0, C: 1 },
+    build: I => new GateNode('g3', 'AND', [new GateNode('g1', 'OR', [I.A, I.B]), new GateNode('g2', 'NOT', [I.C])]) },
+  { title: 'Livello 3 · Riparazione hardware',
+    hint: 'Manca un chip! Prendilo dal tavolo e inseriscilo nello slot. Y deve valere 1 SOLO quando A e B sono DIVERSI.',
+    inputs: { A: 0, B: 0 }, socket: true, chips: ['OR', 'XOR', 'AND'],
+    target: v => v.A !== v.B,
+    build: I => new SocketNode('s1', [I.A, I.B]) },
+  { title: 'Livello 4 · Il caveau',
+    hint: 'Trova la combinazione giusta e tieni Y a 1 per 1,5 secondi senza toccare nulla.',
+    inputs: { A: 0, B: 0, C: 0, D: 0 }, hold: 1.5,
+    build: I => new GateNode('g6', 'AND', [
+      new GateNode('g3', 'AND', [new GateNode('g1', 'XOR', [I.A, I.B]), new GateNode('g2', 'OR', [I.C, I.D])]),
+      new GateNode('g5', 'NOT', [new GateNode('g4', 'AND', [I.A, I.D])])
+    ]) }
+];
+
+/* =========================================================
+   RENDERER, SCENA, CAMERA
+   ========================================================= */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local-floor');
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x070a12);
+scene.fog = new THREE.Fog(0x070a12, 7, 14);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.02, 50);
+camera.position.set(0, 1.65, 1.0);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.45, -1.3);
+controls.enableDamping = true;
+controls.maxDistance = 4;
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0x9fb8ff, 0x1a1410, 0.9));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.4); keyLight.position.set(1.5, 3.5, 2); scene.add(keyLight);
+const ceilLight = new THREE.PointLight(0xcfe0ff, 6, 8, 1.6); ceilLight.position.set(0, 3.4, -0.8); scene.add(ceilLight);
+
+/* =========================================================
+   HELPER GRAFICI
+   ========================================================= */
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+class TextSprite {
+  constructor(text, { size = 0.06, color = '#ffffff', bg = 'rgba(8,12,22,0.85)', w = 256, h = 128 } = {}) {
+    this.w = w; this.h = h; this.bg = bg;
+    this.c = document.createElement('canvas'); this.c.width = w; this.c.height = h; this.g = this.c.getContext('2d');
+    this.tex = new THREE.CanvasTexture(this.c); this.tex.colorSpace = THREE.SRGBColorSpace;
+    this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex, transparent: true, depthWrite: false, toneMapped: false }));
+    this.sprite.scale.set(size * w / h, size, 1);
+    this.set(text, color);
+  }
+  set(text, color = '#ffffff') {
+    if (this._t === text && this._c === color) return;
+    this._t = text; this._c = color;
+    const g = this.g, w = this.w, h = this.h;
+    g.clearRect(0, 0, w, h);
+    if (this.bg) { roundRect(g, 5, 5, w - 10, h - 10, h * 0.22); g.fillStyle = this.bg; g.fill(); g.lineWidth = 7; g.strokeStyle = color; g.stroke(); }
+    let fs = h * 0.64; g.font = `900 ${fs}px ${FONT}`;
+    while (g.measureText(text).width > w - 30 && fs > 10) { fs -= 3; g.font = `900 ${fs}px ${FONT}`; }
+    g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, w / 2, h / 2 + fs * 0.05);
+    this.tex.needsUpdate = true;
+  }
+}
+function logicMat() { return new THREE.MeshStandardMaterial({ color: 0x0c0c0c, emissive: COL_FALSE, emissiveIntensity: 1, roughness: 0.4, metalness: 0.1 }); }
+function setLogic(mat, v, dim = 1) { mat.emissive.setHex(v ? COL_TRUE : COL_FALSE); mat.emissiveIntensity = dim; }
+function setColor(mat, hex, dim = 1) { mat.emissive.setHex(hex); mat.emissiveIntensity = dim; }
+const metalMat = new THREE.MeshStandardMaterial({ color: 0x3a4152, roughness: 0.45, metalness: 0.7 });
+const darkMat = new THREE.MeshStandardMaterial({ color: 0x161b26, roughness: 0.7, metalness: 0.3 });
+
+function gateGeometry(type, s = 1) {
+  switch (type) {
+    case 'AND': return new THREE.BoxGeometry(0.12 * s, 0.09 * s, 0.05 * s);
+    case 'OR': { const g = new THREE.CylinderGeometry(0.055 * s, 0.055 * s, 0.05 * s, 32); g.rotateX(Math.PI / 2); return g; }
+    case 'NOT': return new THREE.ConeGeometry(0.055 * s, 0.1 * s, 3);
+    case 'XOR': return new THREE.OctahedronGeometry(0.065 * s);
+    default: return new THREE.TorusGeometry(0.06 * s, 0.012 * s, 12, 32);
+  }
+}
+
+/* =========================================================
+   STANZA, CONSOLE, MONITOR, PORTA BLINDATA
+   ========================================================= */
+const room = new THREE.Group(); scene.add(room);
+{
+  // pavimento a griglia
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#0d1220'; g.fillRect(0, 0, 256, 256); g.strokeStyle = '#1f2c4a'; g.lineWidth = 4; g.strokeRect(0, 0, 256, 256);
+  const ft = new THREE.CanvasTexture(c); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(10, 10); ft.colorSpace = THREE.SRGBColorSpace;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ map: ft, roughness: 0.9 }));
+  floor.rotation.x = -Math.PI / 2; room.add(floor);
+
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x1b2333, roughness: 0.85 });
+  const addWall = (w, h, x, y, z, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat); m.position.set(x, y, z); m.rotation.y = ry; room.add(m); };
+  addWall(3.15, 4, -2.425, 2, -3, 0); addWall(3.15, 4, 2.425, 2, -3, 0); addWall(1.7, 1.7, 0, 3.15, -3, 0);
+  addWall(7, 4, -4, 2, 0.5, Math.PI / 2); addWall(7, 4, 4, 2, 0.5, -Math.PI / 2); addWall(8, 4, 0, 2, 4, Math.PI);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(8, 7), wallMat); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4, 0.5); room.add(ceil);
+
+  // stanza della libertà dietro la porta
+  const exitRoom = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.3, 1.4), new THREE.MeshStandardMaterial({ color: 0x003318, emissive: 0x00a050, emissiveIntensity: 0.6, side: THREE.BackSide }));
+  exitRoom.position.set(0, 1.15, -3.75); room.add(exitRoom);
+  const free = new TextSprite('USCITA ✓', { size: 0.35, color: CSS_TRUE, w: 512, h: 128 }); free.sprite.position.set(0, 1.3, -4.3); room.add(free.sprite);
+
+  // console
+  const consoleBody = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.9, 0.45), darkMat); consoleBody.position.set(0, 0.45, -0.55); room.add(consoleBody);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.02, 0.49), metalMat); top.position.set(0, 0.9, -0.55); room.add(top);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.03, 0.01), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x2a6cff, emissiveIntensity: 1 }));
+  stripe.position.set(0, 0.8, -0.32); room.add(stripe);
+
+  // pannello circuito (semi-trasparente per non coprire il monitor)
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.8), new THREE.MeshStandardMaterial({ color: 0x0a1a2e, transparent: true, opacity: 0.75, roughness: 0.3, metalness: 0.2 }));
+  board.position.set(0, 1.38, -1.0); room.add(board);
+  const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.84, 0.01), metalMat); boardFrame.position.set(0, 1.38, -1.01); room.add(boardFrame);
+  const legGeo = new THREE.BoxGeometry(0.04, 0.98, 0.04);
+  [-0.98, 0.98].forEach(x => { const l = new THREE.Mesh(legGeo, metalMat); l.position.set(x, 0.49, -1.0); room.add(l); });
+
+  // tavolo dei chip
+  const table = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.45), metalMat); table.position.set(1.15, 0.78, -0.25); room.add(table);
+  const tLegGeo = new THREE.BoxGeometry(0.04, 0.76, 0.04);
+  [[-0.27, -0.2], [0.27, -0.2], [-0.27, 0.2], [0.27, 0.2]].forEach(([dx, dz]) => { const l = new THREE.Mesh(tLegGeo, darkMat); l.position.set(1.15 + dx, 0.38, -0.25 + dz); room.add(l); });
+}
+const SURFACES = [
+  { x: 1.15, z: -0.25, hx: 0.3, hz: 0.225, top: 0.8 },   // tavolo
+  { x: 0, z: -0.55, hx: 0.87, hz: 0.245, top: 0.91 }     // console
+];
+const TABLE_TOP = 0.8;
+
+// Porta blindata
+const door = { t: 0, target: 0, panels: [], bolts: [] };
+{
+  const dg = new THREE.Group(); dg.position.set(0, 0, -3.08); room.add(dg);
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x5a6375, roughness: 0.35, metalness: 0.85 });
+  [-1, 1].forEach(side => {
+    const p = new THREE.Group();
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.05, 0.12), panelMat); slab.position.y = 1.025; p.add(slab);
+    const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 12, 40), metalMat); wheel.position.set(-side * 0.15, 1.1, 0.07); p.add(wheel);
+    for (let k = 0; k < 3; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.02), metalMat); s.position.set(-side * 0.15, 1.1, 0.075); s.rotation.z = k * Math.PI / 3; p.add(s); }
+    p.position.x = side * 0.425; p.userData.side = side; dg.add(p); door.panels.push(p);
+  });
+  // architrave con i 4 LED-serratura
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.25, 0.1), darkMat); lintel.position.set(0, 2.175, -2.98); room.add(lintel);
+  for (let k = 0; k < 4; k++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.04, 20, 14), logicMat());
+    m.position.set(-0.45 + k * 0.3, 2.175, -2.92); room.add(m); door.bolts.push(m);
+  }
+  const lockBox = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.06), logicMat()); lockBox.position.set(0.98, 1.0, -2.96); room.add(lockBox);
+  door.lockBox = lockBox;
+}
+
+/* =========================================================
+   MONITOR DIEGETICO (espressione + tabella di verità)
+   ========================================================= */
+class DiegeticMonitor {
+  constructor() {
+    this.W = 2048; this.H = 1152;
+    this.c = document.createElement('canvas'); this.c.width = this.W; this.c.height = this.H; this.g = this.c.getContext('2d');
+    this.tex = new THREE.CanvasTexture(this.c); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.anisotropy = 8;
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.35), new THREE.MeshBasicMaterial({ map: this.tex, toneMapped: false }));
+    screen.position.set(0, 3.0, -2.93); room.add(screen);
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.45, 0.06), darkMat); frame.position.set(0, 3.0, -2.97); room.add(frame);
+    this.key = '';
+  }
+  wrap(text, x, y, maxW, lh) {
+    const words = text.split(' '); let line = '', yy = y;
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (this.g.measureText(test).width > maxW && line) { this.g.fillText(line, x, yy); line = w; yy += lh; } else line = test;
+    }
+    if (line) this.g.fillText(line, x, yy);
+  }
+  drawExpression(tokens, x, y, maxW) {
+    const g = this.g;
+    let fs = 120, total;
+    const measure = () => {
+      total = 0;
+      for (const tk of tokens) {
+        g.font = `900 ${fs}px ${FONT}`;
+        if (tk.isVar) { total += g.measureText(tk.t).width; g.font = `900 ${fs * 0.5}px ${FONT}`; total += g.measureText('0').width + 8; }
+        else total += g.measureText(tk.t).width;
+      }
+    };
+    measure();
+    while (total > maxW && fs > 30) { fs -= 4; measure(); }
+    let cx = x + (maxW - total) / 2;
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    const blink = (performance.now() % 800) < 400;
+    for (const tk of tokens) {
+      g.font = `900 ${fs}px ${FONT}`;
+      if (tk.isVar) {
+        const col = tk.v ? CSS_TRUE : CSS_FALSE;
+        g.fillStyle = col; g.fillText(tk.t, cx, y); cx += g.measureText(tk.t).width + 4;
+        g.font = `900 ${fs * 0.5}px ${FONT}`; g.fillText(tk.v ? '1' : '0', cx, y + fs * 0.12); cx += g.measureText('0').width + 4;
+      } else {
+        g.fillStyle = tk.missing ? (blink ? CSS_WAIT : '#7a5a10') : tk.op ? '#ffffff' : '#8fa3c8';
+        g.fillText(tk.t, cx, y); cx += g.measureText(tk.t).width;
+      }
+    }
+  }
+  update(game, force) {
+    const L = game.level;
+    const key = [game.levelIndex, game.names.map(n => game.inputs[n].value ? 1 : 0).join(''), game.output.value, game.solved,
+      Math.floor(game.holdT * 20), game.socketNode ? game.socketNode.chipType : '-', game.msg.text, Math.ceil(game.advanceT),
+      (L.socket && game.socketNode && !game.socketNode.chipType) ? Math.floor(performance.now() / 400) % 2 : 0].join('|');
+    if (key === this.key && !force) return;
+    this.key = key;
+    const g = this.g, W = this.W, H = this.H;
+    g.fillStyle = '#060a13'; g.fillRect(0, 0, W, H);
+    // intestazione
+    g.fillStyle = '#101a30'; g.fillRect(0, 0, W, 130);
+    g.textBaseline = 'middle'; g.font = `900 60px ${FONT}`;
+    g.textAlign = 'left'; g.fillStyle = '#ffd34d'; g.fillText('LOGIC ESCAPE', 40, 66);
+    g.textAlign = 'right'; g.fillStyle = '#ffffff'; g.fillText(L.title, W - 40, 66);
+    // consegna
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.font = `600 50px ${FONT}`; g.fillStyle = '#c9d6f2';
+    this.wrap(L.hint, 40, 215, 1120, 62);
+    // espressione
+    g.fillStyle = '#0d1528'; roundRect(g, 30, 390, 1140, 200, 24); g.fill();
+    const hasY = !(L.socket && !game.socketNode.chipType);
+    const tokens = [{ t: 'Y = ', op: true }, ...game.output.tokens()];
+    this.drawExpression(tokens, 50, 530, 1100);
+    // risultato Y (colore + numero + simbolo = leggibile anche dai daltonici)
+    const y = game.output.value;
+    const col = !hasY ? CSS_WAIT : y ? CSS_TRUE : CSS_FALSE;
+    g.lineWidth = 10; g.strokeStyle = col; roundRect(g, 30, 630, 1140, 230, 30); g.stroke();
+    g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `900 150px ${FONT}`;
+    g.fillText(!hasY ? 'Y = ?' : y ? 'Y = 1  ✓' : 'Y = 0  ✗', 600, 748);
+    // barra di tenuta (livello 4)
+    if (L.hold) {
+      const p = Math.min(1, game.holdT / L.hold);
+      g.fillStyle = '#1a2440'; roundRect(g, 30, 900, 1140, 60, 30); g.fill();
+      if (p > 0) { g.fillStyle = CSS_TRUE; roundRect(g, 30, 900, Math.max(60, 1140 * p), 60, 30); g.fill(); }
+      g.fillStyle = '#ffffff'; g.font = `800 40px ${FONT}`; g.fillText(`Tenuta segnale: ${(Math.min(game.holdT, L.hold)).toFixed(1)} / ${L.hold.toFixed(1)} s`, 600, 932);
+    }
+    // messaggio di stato
+    if (game.msg.text) {
+      g.fillStyle = game.msg.color; g.font = `900 62px ${FONT}`; g.textAlign = 'center';
+      let t = game.msg.text; if (game.advanceT > 0) t += `  (${Math.ceil(game.advanceT)})`;
+      g.fillText(t, 600, 1060);
+    }
+    // tabella di verità
+    const rows = game.truthRows();
+    const cols = [...game.names, 'Y']; if (L.target) cols.push('OBIETT.', 'OK');
+    const tx = 1220, tw = 790, ty0 = 230, availH = H - ty0 - 30;
+    g.textAlign = 'left'; g.fillStyle = '#ffd34d'; g.font = `900 46px ${FONT}`; g.textBaseline = 'middle';
+    g.fillText('TABELLA DI VERITÀ', tx, 180);
+    const rh = Math.min(110, availH / (rows.length + 1));
+    const cw = tw / cols.length;
+    g.textAlign = 'center';
+    g.font = `900 ${Math.min(52, rh * 0.55, cw * 0.32)}px ${FONT}`;
+    g.fillStyle = '#1a2440'; g.fillRect(tx, ty0, tw, rh);
+    cols.forEach((c, i) => { g.fillStyle = c === 'Y' ? '#ffd34d' : '#ffffff'; g.fillText(c, tx + cw * (i + 0.5), ty0 + rh / 2); });
+    const cur = game.names.map(n => game.inputs[n].value ? 1 : 0).join('');
+    rows.forEach((r, k) => {
+      const yy = ty0 + rh * (k + 1);
+      const active = r.bits.join('') === cur;
+      g.fillStyle = active ? 'rgba(255,255,255,0.16)' : (k % 2 ? '#0b1222' : '#0e1730'); g.fillRect(tx, yy, tw, rh);
+      if (active) { g.lineWidth = 6; g.strokeStyle = '#ffd34d'; g.strokeRect(tx + 3, yy + 3, tw - 6, rh - 6); }
+      g.font = `900 ${Math.min(56, rh * 0.62)}px ${FONT}`;
+      const cells = [...r.bits.map(b => ({ s: String(b), c: b ? CSS_TRUE : CSS_FALSE }))];
+      cells.push(hasY ? { s: r.y ? '1' : '0', c: r.y ? CSS_TRUE : CSS_FALSE } : { s: '?', c: CSS_WAIT });
+      if (L.target) {
+        cells.push({ s: r.tgt ? '1' : '0', c: r.tgt ? CSS_TRUE : CSS_FALSE });
+        cells.push(hasY ? (r.y === r.tgt ? { s: '✓', c: CSS_TRUE } : { s: '✗', c: CSS_FALSE }) : { s: '–', c: '#667' });
+      }
+      cells.forEach((cell, i) => { g.fillStyle = cell.c; g.fillText(cell.s, tx + cw * (i + 0.5), yy + rh / 2 + 2); });
+    });
+    this.tex.needsUpdate = true;
+  }
+}
+const monitor = new DiegeticMonitor();
+
+/* =========================================================
+   GRUPPO DEL LIVELLO + INTERAZIONI
+   ========================================================= */
+let levelGroup = new THREE.Group(); scene.add(levelGroup);
+const interactables = [];   // mesh colpibili dal raggio / click
+const touchables = [];      // leve e pulsanti attivabili al tocco
+
+function disposeGroup(grp) {
+  grp.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); }
+  });
+}
+
+class VRLeverSwitch {
+  constructor(node, x) {
+    this.node = node; this.cool = 0; this.wasInside = false; this.radius = 0.085;
+    this.group = new THREE.Group(); this.group.position.set(x, 0.91, -0.47); levelGroup.add(this.group);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.12), metalMat); base.position.y = 0.015; this.group.add(base);
+    this.pivot = new THREE.Group(); this.pivot.position.y = 0.03; this.group.add(this.pivot);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.14, 12), metalMat); arm.position.y = 0.07; this.pivot.add(arm);
+    this.knobMat = logicMat();
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.034, 24, 16), this.knobMat); knob.position.y = 0.15; this.pivot.add(knob);
+    this.label = new TextSprite('', { size: 0.075 }); this.label.sprite.position.set(0, 0.29, 0); this.group.add(this.label.sprite);
+    // lettera grande sul fronte della console (leggibile dalla LIM)
+    this.front = new TextSprite(node.id, { size: 0.09, w: 128, h: 128 }); this.front.sprite.position.set(0, -0.06, 0.2); this.group.add(this.front.sprite);
+    [base, arm, knob].forEach(m => { m.userData.target = this; interactables.push(m); });
+    this.center = new THREE.Vector3();
+    touchables.push(this);
+    this.pivot.rotation.x = node.value ? 0.6 : -0.6;
+  }
+  getCenter() { this.group.localToWorld(this.center.set(0, 0.14, 0)); return this.center; }
+  press() {
+    if (this.cool > 0 || !this.group.visible || game.solved) return false;
+    this.node.value = !this.node.value; this.cool = 0.4;
+    synth.play('click', 0.8); synth.play(this.node.value ? 'on' : 'off', 0.7);
+    return true;
+  }
+  update(dt) {
+    this.cool = Math.max(0, this.cool - dt);
+    const target = this.node.value ? 0.6 : -0.6;
+    this.pivot.rotation.x += (target - this.pivot.rotation.x) * Math.min(1, dt * 14);
+    setLogic(this.knobMat, this.node.value, 1);
+    const col = this.node.value ? CSS_TRUE : CSS_FALSE;
+    this.label.set(`${this.node.id} = ${this.node.value ? 1 : 0}`, col);
+    this.front.set(this.node.id, col);
+  }
+}
+
+class PushButton3D {
+  constructor(text, pos, onPress, parent = levelGroup) {
+    this.onPress = onPress; this.cool = 0; this.wasInside = false; this.radius = 0.1;
+    this.group = new THREE.Group(); this.group.position.copy(pos); parent.add(this.group);
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.05, 32), metalMat); ped.position.y = 0.025; this.group.add(ped);
+    this.capMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, emissive: COL_TRUE, emissiveIntensity: 1 });
+    this.cap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.035, 32), this.capMat); this.cap.position.y = 0.065; this.group.add(this.cap);
+    this.label = new TextSprite(text, { size: 0.09, w: 768, h: 128, color: CSS_TRUE }); this.label.sprite.position.set(0, 0.22, 0); this.group.add(this.label.sprite);
+    [ped, this.cap].forEach(m => { m.userData.target = this; interactables.push(m); });
+    this.center = new THREE.Vector3();
+    touchables.push(this);
+  }
+  getCenter() { this.group.localToWorld(this.center.set(0, 0.07, 0)); return this.center; }
+  press() {
+    if (this.cool > 0 || !this.group.visible) return false;
+    this.cool = 1.0; this.cap.position.y = 0.045; synth.play('click'); synth.play('on');
+    setTimeout(() => this.onPress(), 150);
+    return true;
+  }
+  update(dt) {
+    this.cool = Math.max(0, this.cool - dt);
+    this.cap.position.y += (0.065 - this.cap.position.y) * Math.min(1, dt * 8);
+    this.capMat.emissiveIntensity = 0.7 + 0.3 * Math.sin(performance.now() / 200);
+  }
+}
+
+class VRChipSocket {
+  constructor(node, pos) {
+    this.node = node; this.chip = null; this.ejectT = 0;
+    this.pos = pos.clone();
+    this.group = new THREE.Group(); this.group.position.copy(pos); levelGroup.add(this.group);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, 0.02, 32), metalMat); base.position.y = 0.01; this.group.add(base);
+    this.ringMat = logicMat(); setColor(this.ringMat, COL_WAIT);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.01, 10, 40), this.ringMat); ring.rotation.x = Math.PI / 2; ring.position.y = 0.022; this.group.add(ring);
+    this.label = new TextSprite('SLOT CHIP', { size: 0.055, w: 384, h: 128, color: CSS_WAIT }); this.label.sprite.position.set(0, 0.2, 0); this.group.add(this.label.sprite);
+    this.anchor = new THREE.Object3D(); this.anchor.position.set(0, 0.07, 0); this.group.add(this.anchor);
+    this.snapPoint = new THREE.Vector3(pos.x, pos.y + 0.07, pos.z);
+  }
+  insert(chip) {
+    this.chip = chip; chip.state = 'socket'; chip.holder = null; chip.holderId = null;
+    this.node.chipType = chip.type; game.onBoardChanged();
+    synth.play('snap');
+    const ok = game.checkSocket();
+    if (ok) { setColor(this.ringMat, COL_TRUE); this.label.set('CHIP OK ✓', CSS_TRUE); setTimeout(() => game.solve(), 600); }
+    else {
+      setColor(this.ringMat, COL_FALSE); this.label.set('CHIP ERRATO ✗', CSS_FALSE);
+      setTimeout(() => { synth.play('error'); }, 350);
+      game.setMsg('✗ Chip sbagliato: guarda la colonna OK', CSS_FALSE);
+      this.ejectT = 2.6;
+    }
+  }
+  update(dt) {
+    if (this.ejectT > 0) {
+      this.ejectT -= dt;
+      if (this.ejectT <= 0 && this.chip) {
+        const c = this.chip; this.chip = null; this.node.chipType = null; game.onBoardChanged();
+        c.state = 'returning'; c.grabCool = 0.8; synth.play('pop');
+        setColor(this.ringMat, COL_WAIT); this.label.set('SLOT CHIP', CSS_WAIT); game.setMsg('Prova un altro chip!', CSS_WAIT);
+      }
+    }
+  }
+}
+
+class VRLogicChip {
+  constructor(type, home) {
+    this.type = type; this.home = home.clone(); this.state = 'table'; this.vel = new THREE.Vector3();
+    this.holder = null; this.holderId = null; this.floorT = 0; this.grabCool = 0; this.heldT = 0;
+    this.mat = new THREE.MeshStandardMaterial({ color: 0x1d6bd6, emissive: 0x0a3a90, emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.5 });
+    this.mesh = new THREE.Mesh(gateGeometry(type, 0.85), this.mat);
+    this.mesh.position.copy(home); levelGroup.add(this.mesh);
+    this.label = new TextSprite(type, { size: 0.05, color: '#9fd0ff' }); this.label.sprite.position.set(0, 0.085, 0); this.mesh.add(this.label.sprite);
+    this.mesh.userData.target = this; interactables.push(this.mesh);
+  }
+  grab(holder, id) {
+    if (this.state === 'socket' || this.grabCool > 0) return false;
+    if (game.chips.some(c => c !== this && c.holderId === id && c.state === 'held')) return false;
+    this.state = 'held'; this.holder = holder; this.holderId = id; this.heldT = 0;
+    synth.play('click', 0.6, 1.4);
+    return true;
+  }
+  release() {
+    if (this.state !== 'held') return;
+    const s = game.socket;
+    if (s && !s.chip && this.mesh.position.distanceTo(s.snapPoint) < 0.16) { s.insert(this); return; }
+    this.state = 'falling'; this.vel.set(0, 0, 0); this.holder = null; this.holderId = null;
+  }
+  press() {   // click da PC / raggio senza tenere premuto: vola nello slot
+    const s = game.socket;
+    if (s && !s.chip && this.state !== 'socket') { this.state = 'held'; this.holder = s.anchor; this.holderId = 'mouse'; }
+    return true;
+  }
+  update(dt, tmp) {
+    this.grabCool = Math.max(0, this.grabCool - dt);
+    const p = this.mesh.position;
+    this.mesh.rotation.y += dt * 0.6;
+    switch (this.state) {
+      case 'held': {
+        this.heldT += dt;
+        if (this.holder.userData && this.holder.userData.isJoint && !this.holder.visible) { this.release(); break; }
+        this.holder.getWorldPosition(tmp);
+        p.lerp(tmp, Math.min(1, dt * 22));
+        const s = game.socket;
+        if (s && !s.chip && p.distanceTo(s.snapPoint) < 0.12) { s.insert(this); break; }
+        // con la mano: riportarlo vicino al suo posto sul tavolo lo deposita
+        if (this.holder.userData && this.holder.userData.isJoint && this.heldT > 0.8 && p.distanceTo(this.home) < 0.08) {
+          this.state = 'returning'; this.holder = null; this.holderId = null; this.grabCool = 0.8;
+        }
+        break;
+      }
+      case 'falling': {
+        this.vel.y -= 9.8 * dt; p.addScaledVector(this.vel, dt);
+        for (const s of SURFACES) {
+          if (Math.abs(p.x - s.x) < s.hx && Math.abs(p.z - s.z) < s.hz && p.y - 0.045 <= s.top && p.y - 0.045 > s.top - 0.12 && this.vel.y < 0) {
+            p.y = s.top + 0.045; this.vel.set(0, 0, 0); this.state = 'table'; synth.play('click', 0.5, 0.7);
+          }
+        }
+        if (this.state === 'falling' && p.y <= 0.045) { p.y = 0.045; this.vel.set(0, 0, 0); this.state = 'floor'; this.floorT = 0; synth.play('click', 0.6, 0.5); }
+        break;
+      }
+      case 'floor': {
+        this.floorT += dt;
+        if (this.floorT >= 1.5) { p.copy(this.home); this.state = 'table'; this.mesh.scale.setScalar(0.1); synth.play('pop'); }
+        break;
+      }
+      case 'returning': {
+        p.lerp(this.home, Math.min(1, dt * 6));
+        if (p.distanceTo(this.home) < 0.005) { p.copy(this.home); this.state = 'table'; }
+        break;
+      }
+      case 'socket': {
+        p.lerp(game.socket.snapPoint, Math.min(1, dt * 18));
+        break;
+      }
+    }
+    // sicurezza anti-softlock: se esce dalla stanza torna sul tavolo
+    if (p.y < -1 || Math.abs(p.x) > 4 || p.z < -3 || p.z > 4) { p.copy(this.home); this.state = 'table'; }
+    const sc = this.mesh.scale.x; if (sc < 1) this.mesh.scale.setScalar(Math.min(1, sc + dt * 5));
+  }
+}
+
+/* =========================================================
+   CAVI LOGICI ANIMATI E PORTE SUL PANNELLO
+   ========================================================= */
+const pulseGeo = new THREE.SphereGeometry(0.011, 10, 8);
+class AnimatedLogicCable {
+  constructor(srcNode, points, radius = 0.006, pulses = 2) {
+    this.src = srcNode; this.phase = Math.random();
+    const pts = [];
+    for (const q of points) if (!pts.length || pts[pts.length - 1].distanceTo(q) > 0.002) pts.push(q);
+    this.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    this.mat = logicMat();
+    this.mesh = new THREE.Mesh(new THREE.TubeGeometry(this.curve, Math.max(24, pts.length * 12), radius, 8, false), this.mat);
+    levelGroup.add(this.mesh);
+    this.pulseMat = new THREE.MeshBasicMaterial({ color: 0xd8ffe9, toneMapped: false });
+    this.pulses = [];
+    for (let k = 0; k < pulses; k++) { const m = new THREE.Mesh(pulseGeo, this.pulseMat); levelGroup.add(m); this.pulses.push(m); }
+    this.len = this.curve.getLength();
+  }
+  update(dt) {
+    const v = this.src.evaluate ? this.src.value : false;
+    setLogic(this.mat, v, v ? 1 : 0.75);
+    this.phase = (this.phase + dt * 0.9 / Math.max(0.3, this.len)) % 1;
+    this.pulses.forEach((m, k) => { m.visible = v; if (v) this.curve.getPointAt((this.phase + k / this.pulses.length) % 1, m.position); });
+  }
+}
+
+class GateVisual {
+  constructor(node, pos) {
+    this.node = node; this.pos = pos;
+    this.mat = logicMat();
+    if (node.type === 'SOCKET') {
+      this.ring = new THREE.Mesh(gateGeometry('SOCKET'), new THREE.MeshStandardMaterial({ color: 0x111111, emissive: COL_WAIT, emissiveIntensity: 1 }));
+      this.ring.position.copy(pos); levelGroup.add(this.ring);
+      this.inner = null; this.innerType = null;
+    } else {
+      this.mesh = new THREE.Mesh(gateGeometry(node.type), this.mat); this.mesh.position.copy(pos); levelGroup.add(this.mesh);
+    }
+    this.label = new TextSprite(node.type === 'SOCKET' ? '?' : node.type, { size: 0.045, color: '#ffffff' });
+    this.label.sprite.position.set(pos.x + 0.11, pos.y, pos.z + 0.03); levelGroup.add(this.label.sprite);
+  }
+  update() {
+    if (this.node.type === 'SOCKET') {
+      if (this.innerType !== this.node.chipType) {
+        if (this.inner) { levelGroup.remove(this.inner); this.inner.geometry.dispose(); this.inner = null; }
+        this.innerType = this.node.chipType;
+        if (this.innerType) { this.inner = new THREE.Mesh(gateGeometry(this.innerType, 0.7), this.mat); this.inner.position.copy(this.pos); levelGroup.add(this.inner); }
+        this.label.set(this.innerType || '?', this.innerType ? '#ffffff' : CSS_WAIT);
+        this.ring.material.emissive.setHex(this.innerType ? 0x2a6cff : COL_WAIT);
+      }
+    }
+    setLogic(this.mat, this.node.value, 1);
+  }
+}
+
+/* =========================================================
+   GAME LEVEL MANAGER
+   ========================================================= */
+const game = {
+  levelIndex: 0, level: LEVELS[0], inputs: {}, names: [], output: null, levers: [], gateVisuals: [], cables: [],
+  chips: [], socket: null, socketNode: null, nextBtn: null, lamp: null,
+  solved: false, holdT: 0, quickT: 0, advanceT: 0, msg: { text: '', color: '#fff' },
+
+  setMsg(text, color = '#ffffff') { this.msg = { text, color }; },
+
+  load(i) {
+    // pulizia
+    scene.remove(levelGroup); disposeGroup(levelGroup);
+    levelGroup = new THREE.Group(); scene.add(levelGroup);
+    interactables.length = 0; touchables.length = 0;
+    this.levelIndex = i; this.level = LEVELS[i];
+    this.solved = false; this.holdT = 0; this.quickT = 0; this.advanceT = 0;
+    this.levers = []; this.gateVisuals = []; this.cables = []; this.chips = []; this.socket = null; this.socketNode = null;
+    this.setMsg('', '#fff');
+    door.target = 0;
+    door.bolts.forEach((b, k) => setLogic(b.material, k < i, 1));
+
+    const L = this.level;
+    this.names = Object.keys(L.inputs);
+    this.inputs = {};
+    this.names.forEach(n => { this.inputs[n] = new InputNode(n, L.inputs[n]); });
+    const root = L.build(this.inputs);
+    this.output = new VaultOutputNode(root);
+
+    // leve
+    const n = this.names.length, shift = L.socket ? -0.15 : 0;
+    const leverX = {};
+    this.names.forEach((nm, k) => { leverX[nm] = (k - (n - 1) / 2) * 0.3 + shift; this.levers.push(new VRLeverSwitch(this.inputs[nm], leverX[nm])); });
+
+    // layout automatico del grafo sul pannello
+    const depth = new Map(), all = [];
+    const visit = node => {
+      if (depth.has(node)) return depth.get(node);
+      let d = 0;
+      if (!node.isInput) { d = 1 + Math.max(...node.inputs.map(visit)); all.push(node); }
+      depth.set(node, d); return d;
+    };
+    const D = visit(root);
+    const pos = new Map();
+    this.names.forEach(nm => pos.set(this.inputs[nm], new THREE.Vector3(leverX[nm], 0, 0)));
+    for (let d = 1; d <= D; d++) {
+      const layer = all.filter(nd => depth.get(nd) === d);
+      layer.forEach(nd => { const xs = nd.inputs.map(c => pos.get(c).x); nd._x = xs.reduce((a, b) => a + b, 0) / xs.length; });
+      layer.sort((a, b) => a._x - b._x);
+      const mean = layer.reduce((a, b) => a + b._x, 0) / layer.length;
+      for (let k = 1; k < layer.length; k++) if (layer[k]._x < layer[k - 1]._x + 0.3) layer[k]._x = layer[k - 1]._x + 0.3;
+      const mean2 = layer.reduce((a, b) => a + b._x, 0) / layer.length;
+      const y = D === 1 ? 1.32 : 1.1 + (d - 1) / (D - 1) * 0.46;
+      layer.forEach(nd => pos.set(nd, new THREE.Vector3(Math.max(-0.85, Math.min(0.85, nd._x - mean2 + mean)), y, -0.97)));
+    }
+    for (const nd of all) {
+      const gp = pos.get(nd);
+      this.gateVisuals.push(new GateVisual(nd, gp));
+      nd.inputs.forEach((c, k) => {
+        const off = nd.inputs.length === 2 ? (k === 0 ? -0.03 : 0.03) : 0;
+        const end = new THREE.Vector3(gp.x + off, gp.y - 0.06, -0.985);
+        let pts;
+        if (c.isInput) {
+          const lx = pos.get(c).x;
+          const midY = (1.0 + end.y) / 2;
+          pts = [new THREE.Vector3(lx, 0.925, -0.6), new THREE.Vector3(lx, 0.95, -0.85), new THREE.Vector3(lx, 1.0, -0.985),
+                 new THREE.Vector3(lx, midY, -0.985), new THREE.Vector3(end.x, midY + 0.01, -0.985), end];
+        } else {
+          const sp = pos.get(c); const start = new THREE.Vector3(sp.x, sp.y + 0.06, -0.985);
+          const midY = (start.y + end.y) / 2;
+          pts = [start, new THREE.Vector3(start.x, midY, -0.985), new THREE.Vector3(end.x, midY + 0.01, -0.985), end];
+        }
+        this.cables.push(new AnimatedLogicCable(c, pts));
+      });
+    }
+    // lampada di uscita Y e cavo verso la porta
+    const tp = pos.get(root);
+    this.lampMat = logicMat();
+    this.lamp = new THREE.Mesh(new THREE.SphereGeometry(0.045, 24, 16), this.lampMat); this.lamp.position.set(tp.x, 1.72, -0.97); levelGroup.add(this.lamp);
+    this.lampLabel = new TextSprite('Y', { size: 0.06, w: 256, h: 128 }); this.lampLabel.sprite.position.set(tp.x + 0.14, 1.72, -0.94); levelGroup.add(this.lampLabel.sprite);
+    this.cables.push(new AnimatedLogicCable(this.output, [new THREE.Vector3(tp.x, tp.y + 0.06, -0.985), new THREE.Vector3(tp.x, (tp.y + 1.68) / 2, -0.985), new THREE.Vector3(tp.x, 1.675, -0.985)]));
+    this.cables.push(new AnimatedLogicCable(this.output, [
+      new THREE.Vector3(tp.x + 0.04, 1.72, -0.99), new THREE.Vector3(0.95, 1.74, -1.0), new THREE.Vector3(1.1, 1.2, -1.08),
+      new THREE.Vector3(1.15, 0.03, -1.3), new THREE.Vector3(1.1, 0.03, -2.7), new THREE.Vector3(0.98, 0.6, -2.94), new THREE.Vector3(0.98, 0.9, -2.95)
+    ], 0.012, 4));
+
+    // livello 3: slot + chip sul tavolo
+    if (L.socket) {
+      this.socketNode = root;
+      this.socket = new VRChipSocket(root, new THREE.Vector3(0.5, 0.91, -0.5));
+      L.chips.forEach((t, k) => this.chips.push(new VRLogicChip(t, new THREE.Vector3(1.0 + k * 0.15, TABLE_TOP + 0.045, -0.22))));
+      this.setMsg('Prendi un chip dal tavolo →', CSS_WAIT);
+    }
+
+    // pulsante "Prossimo studente" (appare alla vittoria)
+    this.nextBtn = new PushButton3D('PROSSIMO STUDENTE ▶', new THREE.Vector3(0, 0.91, -0.45), () => this.load(0));
+    this.nextBtn.group.visible = false;
+
+    this.output.evaluate();
+    monitor.update(this, true);
+    synth.play('pop');
+  },
+
+  onBoardChanged() { this.output.evaluate(); },
+
+  truthRows() {
+    const N = this.names.length, save = this.names.map(n => this.inputs[n].value), rows = [];
+    for (let k = 0; k < (1 << N); k++) {
+      const obj = {};
+      const bits = this.names.map((n, j) => { const b = (k >> (N - 1 - j)) & 1; this.inputs[n].value = !!b; obj[n] = !!b; return b; });
+      const y = this.output.evaluate();
+      rows.push({ bits, y, tgt: this.level.target ? this.level.target(obj) : null });
+    }
+    this.names.forEach((n, j) => { this.inputs[n].value = save[j]; });
+    this.output.evaluate();
+    return rows;
+  },
+
+  checkSocket() { return this.truthRows().every(r => r.y === r.tgt); },
+
+  solve() {
+    if (this.solved) return;
+    this.solved = true;
+    const i = this.levelIndex;
+    setLogic(door.bolts[i].material, true, 1);
+    synth.play('unlock');
+    if (i < LEVELS.length - 1) {
+      synth.play('success');
+      this.setMsg(`✓ SERRATURA ${i + 1} APERTA!`, CSS_TRUE);
+      this.advanceT = 3.5;
+    } else {
+      setTimeout(() => synth.play('victory'), 400);
+      door.target = 1;
+      this.setMsg('✓ CAVEAU APERTO! BRAVISSIMO!', CSS_TRUE);
+      this.levers.forEach(l => { l.group.visible = false; });
+      this.nextBtn.group.visible = true;
+    }
+  },
+
+  update(dt) {
+    const L = this.level;
+    this.output.evaluate();
+    if (!this.solved) {
+      if (L.hold) {
+        if (this.output.value) {
+          this.holdT += dt;
+          if (this.holdT >= L.hold) { this.holdT = L.hold; this.solve(); }
+          else this.setMsg('Tieni il segnale…', CSS_WAIT);
+        } else {
+          if (this.holdT > 0.3) { synth.play('alarm', 0.7); this.setMsg('✗ Segnale interrotto! Riprova', CSS_FALSE); }
+          this.holdT = 0;
+        }
+      } else if (!L.socket) {
+        if (this.output.value) { this.quickT += dt; if (this.quickT > 0.25) this.solve(); } else this.quickT = 0;
+      }
+    }
+    if (this.advanceT > 0) {
+      this.advanceT -= dt;
+      if (this.advanceT <= 0) { this.advanceT = 0; this.load(this.levelIndex + 1); return; }
+    }
+    this.levers.forEach(l => l.update(dt));
+    this.gateVisuals.forEach(gv => gv.update());
+    this.cables.forEach(c => c.update(dt));
+    setLogic(this.lampMat, this.output.value, 1);
+    setLogic(door.lockBox.material, this.output.value, 1);
+    this.lampLabel.set(this.output.value ? 'Y = 1' : 'Y = 0', this.output.value ? CSS_TRUE : CSS_FALSE);
+    if (this.socket) this.socket.update(dt);
+    if (this.nextBtn) this.nextBtn.update(dt);
+    synth.setHum(this.output.value ? 0.1 : 0.035);
+    monitor.update(this);
+  }
+};
+
+/* =========================================================
+   XR: CONTROLLER, MANI, TOCCO
+   ========================================================= */
+const controllers = [], grips = [], hands = [];
+const handMat = new THREE.MeshStandardMaterial({ color: 0x7fd8ff, emissive: 0x1a5a80, emissiveIntensity: 0.6, roughness: 0.4 });
+const tipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffd34d, emissiveIntensity: 0.9 });
+const unitSphere = new THREE.SphereGeometry(1, 12, 8);
+const raycaster = new THREE.Raycaster();
+const tmpMat = new THREE.Matrix4();
+const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
+
+for (let i = 0; i < 2; i++) {
+  const ctrl = renderer.xr.getController(i);
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
+  const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xffd34d }));
+  line.scale.z = 3; ctrl.add(line); ctrl.userData.line = line;
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffd34d })); dot.visible = false; scene.add(dot); ctrl.userData.dot = dot;
+  ctrl.addEventListener('connected', e => { ctrl.userData.isHand = !!e.data.hand; ctrl.userData.inputSource = e.data; line.visible = !e.data.hand; });
+  ctrl.addEventListener('disconnected', () => { ctrl.userData.inputSource = null; });
+  ctrl.addEventListener('selectstart', () => onSelectStart(i));
+  ctrl.addEventListener('selectend', () => onSelectEnd(i));
+  ctrl.addEventListener('squeezestart', () => onSelectStart(i));
+  ctrl.addEventListener('squeezeend', () => onSelectEnd(i));
+  scene.add(ctrl); controllers.push(ctrl);
+
+  const grip = renderer.xr.getControllerGrip(i);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, 0.11), new THREE.MeshStandardMaterial({ color: 0x2a3550, roughness: 0.5 }));
+  body.position.z = 0.02; grip.add(body);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 14, 10), tipMat); tip.position.set(0, 0, -0.05); grip.add(tip);
+  grip.userData.tip = tip; grip.userData.body = body;
+  scene.add(grip); grips.push(grip);
+
+  const hand = renderer.xr.getHand(i); scene.add(hand); hands.push(hand);
+}
+
+function hapticPulse(i, intensity = 0.6, ms = 40) {
+  const src = controllers[i] && controllers[i].userData.inputSource;
+  const act = src && src.gamepad && src.gamepad.hapticActuators && src.gamepad.hapticActuators[0];
+  if (act && act.pulse) { try { act.pulse(intensity, ms); } catch (e) { /* ignora */ } }
+}
+
+function rayFromController(ctrl) {
+  tmpMat.identity().extractRotation(ctrl.matrixWorld);
+  raycaster.ray.origin.setFromMatrixPosition(ctrl.matrixWorld);
+  raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tmpMat);
+  raycaster.far = 6;
+  const hits = raycaster.intersectObjects(interactables.filter(m => m.visible && isVisibleChain(m)), false);
+  return hits[0] || null;
+}
+function isVisibleChain(o) { while (o) { if (!o.visible) return false; o = o.parent; } return true; }
+
+function onSelectStart(i) {
+  synth.init();
+  const ctrl = controllers[i], grip = grips[i];
+  const holder = (grip.visible && !ctrl.userData.isHand) ? grip.userData.tip : ctrl;
+  // 1) presa ravvicinata di un chip
+  holder.getWorldPosition(tmpV);
+  let best = null, bd = 0.13;
+  for (const c of game.chips) { const d = c.mesh.position.distanceTo(tmpV); if (d < bd && c.state !== 'socket') { bd = d; best = c; } }
+  if (best && best.grab(holder, 'c' + i)) { hapticPulse(i); return; }
+  // 2) raggio
+  const hit = rayFromController(ctrl);
+  if (!hit) return;
+  const t = hit.object.userData.target;
+  if (t instanceof VRLogicChip) { if (t.grab(holder, 'c' + i)) hapticPulse(i); }
+  else if (t && t.press && t.press()) hapticPulse(i, 0.8, 60);
+}
+function onSelectEnd(i) {
+  for (const c of game.chips) if (c.state === 'held' && c.holderId === 'c' + i) c.release();
+}
+
+// raccolta dei punti di contatto (polpastrelli e punte dei controller)
+function gatherTouchers() {
+  const out = [];
+  hands.forEach((hand, i) => {
+    const joints = hand.joints;
+    if (!joints) return;
+    for (const name in joints) {
+      const j = joints[name];
+      if (!j.userData.vis) {
+        const isTip = name === 'index-finger-tip';
+        const m = new THREE.Mesh(unitSphere, isTip ? tipMat : handMat); j.add(m); j.userData.vis = m; j.userData.isJoint = true;
+      }
+      const r = (j.jointRadius || 0.008) * (name === 'index-finger-tip' ? 1.4 : 1);
+      j.userData.vis.scale.setScalar(r);
+    }
+    ['index-finger-tip', 'middle-finger-tip'].forEach(nm => {
+      const j = joints[nm];
+      if (j && j.visible) out.push({ id: 'h' + i, pos: j.getWorldPosition(new THREE.Vector3()), obj: j, isIndex: nm === 'index-finger-tip', ctrl: -1 });
+    });
+  });
+  grips.forEach((g, i) => {
+    if (g.visible && !controllers[i].userData.isHand) out.push({ id: 'c' + i, pos: g.userData.tip.getWorldPosition(new THREE.Vector3()), obj: g.userData.tip, isIndex: false, ctrl: i });
+  });
+  return out;
+}
+
+function processTouch(touchers) {
+  for (const t of touchables) {
+    const c = t.getCenter();
+    let inside = false, who = null;
+    for (const p of touchers) {
+      const d = p.pos.distanceTo(c);
+      if (d < (t.wasInside ? t.radius + 0.02 : t.radius)) { inside = true; who = p; break; }
+    }
+    if (inside && !t.wasInside && who) { if (t.press() && who.ctrl >= 0) hapticPulse(who.ctrl, 0.8, 60); }
+    t.wasInside = inside;
+  }
+  // presa dei chip col solo contatto del dito (niente pinch)
+  for (const p of touchers) {
+    if (!p.isIndex) continue;
+    for (const c of game.chips) {
+      if ((c.state === 'table' || c.state === 'returning') && c.grabCool <= 0 && c.mesh.position.distanceTo(p.pos) < 0.07) { c.grab(p.obj, p.id); break; }
+    }
+  }
+}
+
+function updateRays() {
+  controllers.forEach((ctrl, i) => {
+    const gb = grips[i].userData;
+    gb.body.visible = gb.tip.visible = !ctrl.userData.isHand;
+    const dot = ctrl.userData.dot;
+    if (!renderer.xr.isPresenting || ctrl.userData.isHand || !ctrl.userData.inputSource) { dot.visible = false; return; }
+    const hit = rayFromController(ctrl);
+    if (hit) { ctrl.userData.line.scale.z = hit.distance; dot.position.copy(hit.point); dot.visible = true; }
+    else { ctrl.userData.line.scale.z = 3; dot.visible = false; }
+  });
+}
+
+/* =========================================================
+   MOUSE / TASTIERA (PC, LIM, test del docente)
+   ========================================================= */
+const ndc = new THREE.Vector2(); let downXY = null;
+renderer.domElement.addEventListener('pointerdown', e => { downXY = [e.clientX, e.clientY]; synth.init(); });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downXY || Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]) > 6) return;
+  ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera); raycaster.far = 20;
+  const hits = raycaster.intersectObjects(interactables.filter(m => isVisibleChain(m)), false);
+  if (hits[0] && hits[0].object.userData.target) hits[0].object.userData.target.press();
+});
+window.addEventListener('keydown', e => {
+  synth.init();
+  const k = e.key.toUpperCase();
+  if (['1', '2', '3', '4'].includes(k)) game.load(+k - 1);
+  else if (k === 'R') game.load(game.levelIndex);
+  else { const lv = game.levers.find(l => l.node.id === k); if (lv) lv.press(); }
+});
+document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { synth.init(); game.load(+b.dataset.level); }));
+document.getElementById('resetBtn').addEventListener('click', () => { synth.init(); game.load(game.levelIndex); });
+document.getElementById('audioBtn').addEventListener('click', e => { synth.init(); e.target.textContent = synth.toggle() ? '🔊 Audio' : '🔇 Muto'; });
+document.getElementById('toggleUi').addEventListener('click', () => { const u = document.getElementById('ui'); u.style.display = u.style.display === 'none' ? '' : 'none'; });
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+/* =========================================================
+   INGRESSO IN VR
+   ========================================================= */
+const vrBtn = document.getElementById('vrBtn');
+let xrSession = null;
+async function setupVRButton() {
+  if (!('xr' in navigator)) { vrBtn.textContent = 'WebXR non disponibile (apri nel browser del Quest)'; return; }
+  let ok = false;
+  try { ok = await navigator.xr.isSessionSupported('immersive-vr'); } catch (e) { ok = false; }
+  if (!ok) { vrBtn.textContent = 'VR non supportata su questo dispositivo'; if (!window.isSecureContext) vrBtn.textContent += ' (serve HTTPS)'; return; }
+  vrBtn.disabled = false; vrBtn.textContent = '▶ ENTRA IN VR';
+  vrBtn.addEventListener('click', async () => {
+    synth.init();
+    if (xrSession) { xrSession.end(); return; }
+    try {
+      const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] });
+      await renderer.xr.setSession(session);
+      xrSession = session; vrBtn.textContent = '■ ESCI DALLA VR';
+      session.addEventListener('end', () => { xrSession = null; vrBtn.textContent = '▶ ENTRA IN VR'; });
+    } catch (err) { vrBtn.textContent = 'Errore VR: ' + err.message; }
+  });
+}
+setupVRButton();
+
+/* =========================================================
+   LOOP PRINCIPALE
+   ========================================================= */
+const clock = new THREE.Clock();
+const doorAudioState = { last: 0 };
+game.load(0);
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const touchers = renderer.xr.isPresenting ? gatherTouchers() : [];
+  processTouch(touchers);
+  updateRays();
+  for (const c of game.chips) c.update(dt, tmpV2);
+  game.update(dt);
+  // animazione porta blindata
+  door.t += (door.target - door.t) * Math.min(1, dt * 1.2);
+  door.panels.forEach(p => { p.position.x = p.userData.side * (0.425 + 0.86 * door.t); });
+  if (!renderer.xr.isPresenting) controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
