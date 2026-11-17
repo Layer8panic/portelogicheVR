@@ -1699,7 +1699,11 @@ const NAV = { house: [], factory: [], yard: [] };
 const WALK = { house: { x0: -3.7, x1: 3.7, z0: -3.7, z1: 3.7 }, factory: { x0: -11.5, x1: 11.5, z0: -49.5, z1: -30.5 }, yard: { x0: -12, x1: 12, z0: 4.7, z1: 30 } };
 const nav = (area, x0, x1, z0, z1) => NAV[area].push({ x0, x1, z0, z1 });
 const houseLights = [], factoryLights = [], yardLights = [];
-function addLight(list, color, intensity, dist, x, y, z, decay = 1.5) { const l = new THREE.PointLight(color, intensity, dist, decay); l.position.set(x, y, z); l.userData.base = intensity; scene.add(l); list.push(l); return l; }
+function addLight(list, color, intensity, dist, x, y, z, decay = 1.5) { const l = new THREE.PointLight(color, intensity, dist, decay); l.position.set(x, y, z); l.userData.base = intensity; list.push(l); return l; }
+const LIGHT_POOL = []; for (let k = 0; k < 4; k++) { const l = new THREE.PointLight(0xffffff, 0, 1, 1.5); scene.add(l); LIGHT_POOL.push(l); }
+let activeLights = [];
+function assignLights(list) { activeLights = list.slice(0, LIGHT_POOL.length); LIGHT_POOL.forEach((p, k) => { const s = activeLights[k]; if (!s) { p.intensity = 0; return; } s.updateMatrixWorld(true); s.getWorldPosition(p.position); p.color.copy(s.color); p.distance = s.distance; p.decay = s.decay; p.intensity = s.intensity; }); }
+function syncLights() { LIGHT_POOL.forEach((p, k) => { const s = activeLights[k]; p.intensity = s ? s.intensity : 0; }); }
 const houseFire = { parts: [], level: 1 };
 let magicDoor = null, houseTree = null;
 function gearGeo(r, teeth, depth) { const s = new THREE.Shape(), n = teeth * 4; for (let k = 0; k < n; k++) { const a = k / n * TAU, rr = (k % 4 < 2) ? r : r * 0.82; if (k === 0) s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); else s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } s.closePath(); const h = new THREE.Path(); h.absarc(0, 0, r * 0.22, 0, TAU, true); s.holes.push(h); const g = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: depth * 0.2, bevelSize: r * 0.02, bevelSegments: 2, curveSegments: 6 }); g.translate(0, 0, -depth / 2); return g; }
@@ -1885,8 +1889,8 @@ function buildFactory() {
   addMesh(G, rbox(1.6, 0.06, 0.7, 0.03), MAT.wood, 0, 0.75, -32.4); for (const [x, z] of [[-0.7, -32.1], [0.7, -32.1], [-0.7, -32.7], [0.7, -32.7]]) addMesh(G, new THREE.CylinderGeometry(0.035, 0.035, 0.74, 10), MAT.darkWood, x, 0.37, z);
   addStaticBox(0, 0.75, -32.4, 0.8, 0.03, 0.35); nav('factory', -0.9, 0.9, -32.8, -32.0);
   for (const [x, z] of [[-9.5, -31.2], [9.5, -31.2]]) { addMesh(G, rbox(2.2, 2.4, 0.5, 0.04), MAT.darkWood, x, 1.2, z); for (const y of [0.6, 1.2, 1.8]) addMesh(G, rbox(2.1, 0.04, 0.46, 0.01), MAT.wood, x, y, z); for (let k = 0; k < 9; k++) { const b = giftBox(0.28, 0.24, 0.28, k, k); b.position.set(x - 0.8 + (k % 3) * 0.75, 0.62 + Math.floor(k / 3) * 0.6 + 0.12, z); G.add(b); } nav('factory', x - 1.2, x + 1.2, z - 0.4, -30); }
-  addLight(factoryLights, 0xffd8a8, 16, 16, -5, 6.5, -35); addLight(factoryLights, 0xffd8a8, 16, 16, 5, 6.5, -35); addLight(factoryLights, 0xffd8a8, 16, 16, -5, 6.5, -45); addLight(factoryLights, 0xffd8a8, 16, 16, 5, 6.5, -45);
-  addLight(factoryLights, 0xffc070, 8, 9, 0, 3.0, -37.2);
+  addLight(factoryLights, 0xffd8a8, 26, 22, 0, 6.6, -34.5); addLight(factoryLights, 0xffd8a8, 26, 22, 0, 6.6, -45.5);
+  addLight(factoryLights, 0xffc070, 9, 10, 0, 3.0, -37.2);
   floorPick(G, 0, -40, 23.6, 19.6);
 }
 
@@ -1925,7 +1929,7 @@ class Station {
     if (this.onReset) this.onReset();
   }
   setSolved() { this.solved = true; if (this.onSolvedQuiet) this.onSolvedQuiet(); }
-  update(dt, t, active) { if (this.preEval) this.preEval(); this.output.evaluate(); const tgt = this.solved || this.output.value ? 1 : 0; this.run += (tgt - this.run) * Math.min(1, dt * 1.5); if (active && this.fx) this.fx(dt, t); }
+  update(dt, t, active, focus = true) { if (!focus) { this.acc = (this.acc || 0) + dt; if (this.acc < 0.066) return; dt = this.acc; } this.acc = 0; if (this.preEval) this.preEval(); this.output.evaluate(); const tgt = this.solved || this.output.value ? 1 : 0; this.run += (tgt - this.run) * Math.min(1, dt * 1.5); if (active && this.fx) this.fx(dt, t); }
 }
 ValveInput.prototype.sync = function () { this.angle = this.node.value ? this.maxA : 0; this.auto = null; this.vel = 0; };
 KeySwitch.prototype.sync = function () { this.angle = this.node.value ? Math.PI / 2 : 0; this.auto = null; };
@@ -1947,6 +1951,58 @@ function makeTeddy(color = 0xa8743a) {
   addMesh(g, new THREE.SphereGeometry(0.025, 12, 8), muz, 0, 0.07, 0.045); addMesh(g, new THREE.SphereGeometry(0.009, 8, 6), MAT.black, 0, 0.078, 0.068); addMesh(g, fluffyTorus(0.035, 0.008, 0.2, 8, 24, 6), MAT.red, 0, 0.035, 0.0, Math.PI / 2);
   return g;
 }
+// sportello del forno a ribalta (cerniera in basso, come un forno vero):
+// si tira giù dalla maniglia, si richiude spingendolo con la mano; vicino alla chiusura una molla lo fa scattare.
+class OvenDoor {
+  constructor(frame, pos) {
+    this.frame = frame; this.L = 0.64; this.half = 0.43; this.thick = 0.05; this.maxA = 1.42; this.angle = this.maxA; this.w = 0; this.auto = null; this.holder = null; this.wasClosed = false;
+    const g = this.group = new THREE.Group(); g.position.copy(pos); g.userData.dynamic = true; frame.add(g);
+    addMesh(g, rbox(0.86, this.L, this.thick, 0.025), MAT.gingerbread, 0, this.L / 2, 0);
+    const glass = addMesh(g, new THREE.PlaneGeometry(0.58, 0.34), MAT.glass, 0, 0.34, this.thick / 2 + 0.002); glass.userData.noRay = true;
+    for (const y of [0.13, 0.55]) addMesh(g, rbox(0.62, 0.035, 0.015, 0.006), MAT.white, 0, y, this.thick / 2 + 0.006);
+    // maniglia orizzontale dorata in alto
+    addMesh(g, new THREE.CylinderGeometry(0.014, 0.014, 0.5, 16), MAT.gold, 0, this.L - 0.06, 0.075, 0, 0, Math.PI / 2);
+    for (const sx of [-0.25, 0.25]) addMesh(g, new THREE.CylinderGeometry(0.01, 0.01, 0.055, 10), MAT.gold, sx, this.L - 0.06, 0.05, Math.PI / 2);
+    tagTargets(g, this); grabbables.push(this); hinges.push(this);
+  }
+  handleLocal(out) { return out.set(0, this.L - 0.06, 0.075); }
+  // posizione della mano nel piano della cerniera: (y in su, z verso il giocatore)
+  local(p, out) { this.frame.worldToLocal(out.copy(p)); out.sub(this.group.position); return out; }
+  isOpen() { return this.angle > 0.3; }
+  grabCenter(out) { return this.group.localToWorld(this.handleLocal(out)); }
+  grabDist(p) { this.group.worldToLocal(_v4.copy(p)); const dx = Math.max(0, Math.abs(_v4.x) - 0.25); return Math.hypot(dx, _v4.y - (this.L - 0.06), _v4.z - 0.075) - 0.06; }
+  haloSize() { return 0.16; }
+  onGrab(I) { if (!isVisibleChain(this.group)) return false; this.holder = I; this.auto = null; const l = this.local(I.pos, _v4); this.off = this.angle - Math.atan2(l.z, l.y); return true; }
+  onHold(I, dt) {
+    if (this.holder !== I) return; const l = this.local(I.pos, _v4), tgt = clamp(Math.atan2(l.z, l.y) + this.off, 0, this.maxA), prev = this.angle;
+    this.angle += (tgt - this.angle) * Math.min(1, dt * 22); this.w = (this.angle - prev) / Math.max(dt, 1e-3);
+    if (Math.hypot(l.y, l.z) > this.L + 0.35 || Math.abs(l.x) > 0.7) { this.onRelease(I); I.held = null; }
+  }
+  onRelease(I) { if (this.holder === I) this.holder = null; this.w = clamp(this.w, -4, 4); }
+  click() { this.animateTo(this.isOpen() ? 0 : this.maxA); }
+  animateTo(a) { this.auto = a; synth.play('creak', 0.5, rnd(1.0, 1.2), this.grabCenter(new V3())); }
+  touch(touches) {
+    if (this.holder || !isVisibleChain(this.group)) return;
+    for (const t of touches) {
+      const l = this.local(t.pos, _v4); if (Math.abs(l.x) > this.half + t.r) continue; const r = Math.hypot(l.y, l.z); if (r < 0.06 || r > this.L + 0.02) continue;
+      const phi = Math.atan2(l.z, l.y), gap = (this.thick / 2 + t.r + 0.004) / r, d = phi - this.angle; if (Math.abs(d) > gap) continue;
+      const prev = this.angle; this.angle = clamp(d > 0 ? phi - gap : phi + gap, 0, this.maxA); this.w = clamp((this.angle - prev) / 0.016, -5, 5) * 0.6; this.auto = null;
+    }
+  }
+  update(dt) {
+    if (!this.holder) {
+      if (this.auto !== null) { const d = this.auto - this.angle; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 2.2); if (Math.abs(d) < 0.002) { this.auto = null; this.w = 0; } }
+      else {
+        // gravità oltre il punto morto, molla di chiusura sotto 0.3 rad, attrito della cerniera
+        const acc = this.angle < 0.3 ? -14 * (0.3 - this.angle) - 3 : 9 * Math.sin(this.angle) * 0.35;
+        this.w += acc * dt; this.w *= Math.exp(-4 * dt); this.angle += this.w * dt;
+      }
+      if (this.angle <= 0) { if (this.w < -0.6) synth.play('latch', Math.min(1, -this.w / 3), 1, this.grabCenter(new V3())); this.angle = 0; this.w = 0; }
+      if (this.angle >= this.maxA) { if (this.w > 1) synth.play('thud', 0.3, 1.2, this.grabCenter(new V3())); this.angle = this.maxA; this.w = 0; }
+    }
+    this.group.rotation.x = this.angle;
+  }
+}
 const BUILDERS = {
   // 1 · forno dei biscotti: l'ingresso è lo sportello vero del forno
   oven(st) {
@@ -1967,12 +2023,10 @@ const BUILDERS = {
     addStaticLocal(F, 1.0, 0.78, -1.0, 0.275, 0.02, 0.21);
     st.cookies = [0, 1, 2].map(k => makeCookie(st.L(0.9 + k * 0.11, 0.81, -1.0 + (k % 2) * 0.08), 'factory', true));
     // sportello del forno = ingresso A
-    const piv = st.L(-0.43, 0, -0.995);
-    st.door = new Hinge({ pivot: piv, rotY0: st.yaw, dir: -1, inSign: 1, width: 0.86, y0: 0.5, y1: 1.14, thick: 0.05, maxA: 1.6, start: 1.25, sound: 'creak',
-      build: g => { addMesh(g, rbox(0.86, 0.64, 0.05, 0.03), MAT.gingerbread, 0.43, 0.82, 0); addMesh(g, new THREE.PlaneGeometry(0.6, 0.38), MAT.glass, 0.43, 0.84, 0.03).userData.noRay = true; addMesh(g, rbox(0.62, 0.04, 0.02, 0.01), MAT.white, 0.43, 0.62, 0.03); addMesh(g, rbox(0.62, 0.04, 0.02, 0.01), MAT.white, 0.43, 1.05, 0.03); addMesh(g, new THREE.TorusGeometry(0.05, 0.012, 8, 16, Math.PI), MAT.gold, 0.79, 0.82, 0.05, 0, 0, -Math.PI / 2); return new V3(0.8, 0.82, 0.07); } });
+    st.door = new OvenDoor(st.frame, new V3(0, 0.5, -0.99));
     st.lbl = inputLabel(st.dyn, st.inputs.A, 'Sportello aperto', -0.95, 1.5, -0.9);
     st.preEval = () => { st.inputs.A.value = st.door.isOpen(); st.lbl.update(st.inputs.A.value); };
-    st.onReset = () => { st.door.angle = 1.25; st.door.auto = null; st.cookies.forEach(c => c.hide(true)); };
+    st.onReset = () => { st.door.angle = st.door.maxA; st.door.w = 0; st.door.auto = null; st.cookies.forEach(c => c.hide(true)); };
     st.onSolvedQuiet = () => { st.cookies.forEach(c => c.hide(false)); };
     st.onSolve = () => { st.cookies.forEach((c, k) => setTimeout(() => { c.hide(false); synth.play('pop', 0.7, 1, c.mesh.position); sparkBurst(c.mesh.position, 8); }, 800 + k * 350)); };
     st.loop = 'ovenLoop';
@@ -2121,7 +2175,7 @@ const BUILDERS = {
     const wh = new THREE.Group(); wh.position.set(0, 0, -6.4); F.add(wh);
     addMesh(wh, new THREE.BoxGeometry(6, 4.2, 6), new THREE.MeshBasicMaterial({ color: 0x5a3a20, side: THREE.BackSide }), 0, 2.1, 0);
     { const n = 90, gb = new THREE.InstancedMesh(rbox(0.4, 0.35, 0.4, 0.05), std(0xffffff, 0.45), n), m4 = new THREE.Matrix4(), c = new THREE.Color(), cols = [0xc8202c, 0x1f6a3a, 0x2b4fa0, 0xf2c45a, 0x7a2a8c, 0xffffff]; srand(12); for (let k = 0; k < n; k++) { const a = sr() * Math.PI, r = srr(0.8, 2.6), h = Math.max(0, 2.2 - r) * srr(0.5, 1.2); m4.compose(new V3(Math.cos(a) * r * 1.1, 0.18 + sr() * h, -Math.sin(a) * r * 0.9 + 0.4), new Q().setFromEuler(new THREE.Euler(0, sr() * 3, 0)), new V3(1, 1, 1)); gb.setMatrixAt(k, m4); gb.setColorAt(k, c.setHex(cols[k % cols.length])); } wh.add(gb); }
-    st.whLight = new THREE.PointLight(0xffc070, 0, 8, 1.4); st.whLight.position.set(0, 2.2, -6.0); F.add(st.whLight);
+    { const p = st.L(0, 2.2, -6.0); st.whLight = addLight(factoryLights, 0xffc070, 0, 8, p.x, p.y, p.z, 1.4); }
     st.elfLocal = new V3(1.25, 0, -1.0); st.boardPose = { pos: new V3(-2.35, 2.35, -2.3), ry: 0.6 };
     st.open = 0;
     st.onReset = () => { st.open = 0; };
@@ -2264,8 +2318,7 @@ function applyTravel(p) {
 function setArea(a) {
   game.area = a;
   houseGroup.visible = a !== 'factory'; houseExt.visible = a !== 'factory'; yardGroup.visible = a !== 'factory'; factoryGroup.visible = a === 'factory'; team.group.visible = a !== 'factory' && team.state !== 'gone';
-  houseLights.forEach(l => l.visible = a !== 'factory'); factoryLights.forEach(l => l.visible = a === 'factory');
-  stations.forEach(s => { if (s.cfg.key === 'gate') s.whLight.visible = a === 'factory'; });
+  assignLights(a === 'factory' ? factoryLights : houseLights);
   props.forEach(p => { if (p.state !== 'hidden') p.mesh.visible = (p.area === 'factory') === (a === 'factory'); });
   hinges.forEach(h => { h.group.visible = a === 'factory'; });
   board.group.visible = a === 'factory';
@@ -2352,7 +2405,7 @@ function helpStation() {
   if (st.cfg.plug) { const P = st.panel; if (P.plugged) P.detach(P.plug); const ok = P.sockets.find(q => { st.root.chipType = q.type; const r = st.checkTarget(); st.root.chipType = null; return r; }); if (ok) P.insert(P.plug, ok); return; }
   const row = st.truthRows().find(r => r.y); if (!row) return;
   st.names.forEach((n, j) => { st.inputs[n].value = !!row.bits[j]; }); st.devs.forEach(d => d.sync && d.sync());
-  if (st.door) { st.door.animateTo(st.inputs.A.value ? 1.25 : 0, 1.5); }
+  if (st.door) { st.door.animateTo(st.inputs.A.value ? st.door.maxA : 0); }
   sparkBurst(st.L(0, 1.1, -0.6), 14);
 }
 
@@ -2565,7 +2618,7 @@ async function setupXR() {
     try {
       const session = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] });
       await renderer.xr.setSession(session); xrSession = session; camera.position.set(0, 0, 0);
-      try { if (session.supportedFrameRates && session.updateTargetFrameRate) { const r = Array.from(session.supportedFrameRates); session.updateTargetFrameRate(r.includes(90) ? 90 : Math.max(...r)).catch(() => {}); } } catch (e) { /* opzionale */ }
+      try { if (session.supportedFrameRates && session.updateTargetFrameRate) { const r = Array.from(session.supportedFrameRates); session.updateTargetFrameRate(r.includes(72) ? 72 : Math.min(...r)).catch(() => {}); } } catch (e) { /* opzionale */ }
       vrBtn.textContent = '■ ESCI'; startIntro();
       session.addEventListener('end', () => { xrSession = null; vrBtn.textContent = '🎅 ENTRA AL POLO NORD'; camera.position.set(0, 1.6, 0); });
     } catch (err) { vrBtn.textContent = 'Errore VR: ' + err.message; }
@@ -2603,12 +2656,13 @@ function init() {
   helpBtn = new FloatButton('AIUTO 💡', 0xffb020, () => helpStation()); helpBtn.hide(); nextBtn3D.hide();
   stations.forEach(s => s.reset());
   bakeStatic(houseGroup); bakeStatic(houseExt); bakeStatic(yardGroup); bakeStatic(factoryGroup);
+  [houseGroup, houseExt, yardGroup, factoryGroup].forEach(g => g.visible = true); try { renderer.compile(scene, camera); } catch (e) { /* opzionale */ }
   setArea('house');
   document.getElementById('loading').style.display = 'none';
 }
 init(); setupXR(); startIntro();
 
-const clock = new THREE.Clock();
+const clock = new THREE.Clock(); const _m4c = new THREE.Matrix4(), _euc = new THREE.Euler();
 const errSeen = new Set();
 function safe(tag, fn) { try { fn(); } catch (e) { if (!errSeen.has(tag + e.message)) { errSeen.add(tag + e.message); console.error(tag, e); const el = document.getElementById('err'); if (el && errSeen.size < 6) el.textContent += '⚠ ' + tag + ': ' + e.message + '\n'; } } }
 renderer.setAnimationLoop(() => {
@@ -2626,7 +2680,7 @@ renderer.setAnimationLoop(() => {
   safe('story', () => updateSeq(dt));
   safe('stations', () => {
   const cur = game.stIdx >= 0 ? stations[game.stIdx] : null;
-  for (const s of stations) s.update(dt, t, game.area === 'factory');
+  for (const s of stations) s.update(dt, t, game.area === 'factory', s === cur);
   devices.forEach(d => d.update(dt)); hinges.forEach(h => h.update(dt));
   if (cur && game.area === 'factory') {
     if (game.phase === 'play' && !cur.solved) {
@@ -2665,8 +2719,8 @@ renderer.setAnimationLoop(() => {
     const d = new Date(), sec = d.getSeconds() + d.getMilliseconds() / 1000, m = d.getMinutes() + sec / 60, h = (d.getHours() % 12) + m / 60; clockHands.s.rotation.z = -Math.floor(sec) / 60 * TAU; clockHands.m.rotation.z = -m / 60 * TAU; clockHands.h.rotation.z = -h / 12 * TAU;
     team.update(dt, t);
   } else {
-    const C = factoryFx.conveyor; C.t += dt * 0.08; const m4 = new THREE.Matrix4();
-    for (let k = 0; k < C.n; k++) { const a = C.t + k / C.n * TAU; m4.compose(_v1.set(Math.cos(a) * 9.3, 5.95 + Math.sin(a * 3 + k) * 0.03, -40 + Math.sin(a) * 9.3), _q1.setFromEuler(new THREE.Euler(0, -a, 0)), _v2.set(1, 1, 1)); C.gb.setMatrixAt(k, m4); _v1.y += 0.17; m4.compose(_v1, _q1, _v2); C.rb.setMatrixAt(k, m4); }
+    const C = factoryFx.conveyor; C.t += dt * 0.08; const m4 = _m4c, eu = _euc;
+    for (let k = 0; k < C.n; k++) { const a = C.t + k / C.n * TAU; m4.compose(_v1.set(Math.cos(a) * 9.3, 5.95 + Math.sin(a * 3 + k) * 0.03, -40 + Math.sin(a) * 9.3), _q1.setFromEuler(eu.set(0, -a, 0)), _v2.set(1, 1, 1)); C.gb.setMatrixAt(k, m4); _v1.y += 0.17; m4.compose(_v1, _q1, _v2); C.rb.setMatrixAt(k, m4); }
     C.gb.instanceMatrix.needsUpdate = true; C.rb.instanceMatrix.needsUpdate = true;
     factoryFx.stars.forEach((s, k) => { s.rotation.y += dt * 0.6; s.position.y = 6.9 + Math.sin(t * 1.2 + k) * 0.08; });
     if (factoryFx.tree.userData.star) factoryFx.tree.userData.star.rotation.y += dt * 0.5;
@@ -2674,7 +2728,7 @@ renderer.setAnimationLoop(() => {
   if (game.endShown) { endPanel.material.opacity = Math.min(1, (endPanel.material.opacity || 0) + dt * 0.5); }
   bursts.update(dt); snowfall.update(dt, t, headPosV); skyMat.uniforms.uTime.value = t; skyDome.position.copy(headPosV); moon.position.set(headPosV.x - 90, 120, headPosV.z + 160);
   });
-  safe('audio', () => { updateAmbience(t); music.update(); });
+  safe('audio', () => { updateAmbience(t); music.update(); syncLights(); });
   if (!renderer.xr.isPresenting) controls.update();
   renderer.render(scene, camera);
 });
