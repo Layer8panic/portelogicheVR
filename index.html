@@ -438,8 +438,10 @@ function addStaticBox(cx, cy, cz, hx, hy, hz, rotY = 0) {
   b.addShape(new CANNON.Box(new CANNON.Vec3(hx, hy, hz))); b.position.set(cx, cy, cz); if (rotY) b.quaternion.setFromEuler(0, rotY, 0); world.addBody(b); return b;
 }
 // collisore definito nel sistema locale di una stazione/stanza
+const STATIC_FOOT = { on: false, list: [] };
 function addStaticLocal(frame, x, y, z, hx, hy, hz, ry = 0) {
   frame.updateMatrixWorld(true); const p = frame.localToWorld(new V3(x, y, z)); const yaw = frame.rotation.y + ry;
+  if (STATIC_FOOT.on && y - hy < 1.1) STATIC_FOOT.list.push({ cx: p.x, cz: p.z, hx, hz, yaw });
   return addStaticBox(p.x, p.y, p.z, hx, hy, hz, yaw);
 }
 { const f = new CANNON.Body({ mass: 0, type: CANNON.Body.STATIC, collisionFilterGroup: G_STATIC, collisionFilterMask: G_PROP }); f.addShape(new CANNON.Plane()); f.quaternion.setFromEuler(-Math.PI / 2, 0, 0); world.addBody(f); }
@@ -749,7 +751,7 @@ function profileR(pts, y) { for (let i = 0; i < pts.length - 1; i++) { const [r0
 class Bubble {
   constructor() {
     this.c = mkCanvas(1024, 420); this.g = this.c.getContext('2d'); this.tex = new THREE.CanvasTexture(this.c); this.tex.colorSpace = THREE.SRGBColorSpace;
-    this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex, transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
+    this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex, transparent: true, depthTest: true, depthWrite: false, toneMapped: false }));
     this.sprite.scale.set(0.95, 0.39, 1); this.sprite.renderOrder = 990; this.sprite.visible = false; this.sprite.raycast = () => {}; scene.add(this.sprite);
   }
   set(name, text, color) {
@@ -1312,7 +1314,7 @@ class Hinge {
   isOpen() { return this.angle > 0.25; }
   handleWorld(out = _v3) { return this.group.localToWorld(out.copy(this.handleLocal)); }
   grabCenter(out) { return this.handleWorld(out); }
-  grabDist(p) { return this.handleWorld(_v4).distanceTo(p) - 0.03; }
+  grabDist(p) { return this.handleWorld(_v4).distanceTo(p) - 0.07; }
   haloSize() { return 0.12; }
   handAngle(p) { const dx = p.x - this.pivot.x, dz = p.z - this.pivot.z; let r = Math.atan2(-dz, dx) - this.rotY0; r = Math.atan2(Math.sin(r), Math.cos(r)); return r * this.dir; }
   onGrab(I) { if (!isVisibleChain(this.group)) return false; this.holder = I; this.auto = null; this.off = this.angle - this.handAngle(I.pos); this.tugT = 0; if (this.locked) synth.play('rattle', 0.7, 0.8, this.handleWorld(new V3())); return true; }
@@ -1902,10 +1904,10 @@ class Station {
     this.root = C.build(this.inputs); this.output = new OutputNode(this.root);
     this.solved = false; this.holdT = 0; this.quickT = 0; this.run = 0; this.msg = null; this.devs = [];
     this.elfLocal = new V3(-1.25, 0, -0.95); this.compLocal = [new V3(1.3, 0, -0.25), new V3(1.65, 0, 0.4)]; this.boardPose = { pos: new V3(0, 2.6, -3.1), ry: 0 };
-    BUILDERS[C.key](this);
+    STATIC_FOOT.on = true; STATIC_FOOT.list = []; BUILDERS[C.key](this); STATIC_FOOT.on = false;
     this.frame.updateMatrixWorld(true);
-    const pts = [[-1.7, -0.4], [1.7, -0.4], [-1.7, -3.4], [1.7, -3.4]].map(([x, z]) => this.frame.localToWorld(new V3(x, 0, z)));
-    nav('factory', Math.min(...pts.map(p => p.x)), Math.max(...pts.map(p => p.x)), Math.min(...pts.map(p => p.z)), Math.max(...pts.map(p => p.z)));
+    for (const b of STATIC_FOOT.list) NAV.factory.push({ obb: true, ...b });
+    if (C.key === 'gate') { const p = this.L(0, 0, -3.35); NAV.factory.push({ obb: true, cx: p.x, cz: p.z, hx: 1.95, hz: 0.2, yaw: this.yaw }); }
     stations.push(this);
   }
   L(x, y, z) { return this.frame.localToWorld(new V3(x, y, z)); }
@@ -2422,12 +2424,17 @@ function rayFromController(ctrl) { tmpMat.identity().extractRotation(ctrl.matrix
 function grabDistance(t, p) { return t.distTo ? t.distTo(p) : t.grabDist(p); }
 function findGrabTarget(p) { let best = null, bd = 0.05; for (const t of grabbables) { if (t.grabbable && !t.grabbable()) continue; if (t.group && !isVisibleChain(t.group)) continue; const d = grabDistance(t, p); if (d < bd) { bd = d; best = t; } } return best; }
 function headPos(out) { return camera.getWorldPosition(out); }
-function validSpot(x, z, m = 0.2) { const B = WALK[game.area]; if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return false; for (const a of NAV[game.area]) if (x > a.x0 - m && x < a.x1 + m && z > a.z0 - m && z < a.z1 + m) return false; return true; }
+function navLocal(a, x, z) { if (!a.obb) return [x, z, (a.x0 + a.x1) / 2, (a.z0 + a.z1) / 2, (a.x1 - a.x0) / 2, (a.z1 - a.z0) / 2]; const dx = x - a.cx, dz = z - a.cz, c = Math.cos(a.yaw), s = Math.sin(a.yaw); return [dx * c - dz * s, dx * s + dz * c, 0, 0, a.hx, a.hz]; }
+function validSpot(x, z, m = 0.2) { const B = WALK[game.area]; if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return false; for (const a of NAV[game.area]) { const [lx, lz, cx, cz, hx, hz] = navLocal(a, x, z); if (Math.abs(lx - cx) < hx + m && Math.abs(lz - cz) < hz + m) return false; } return true; }
 function shiftHeld(fn) { for (const I of inters) { const p = I.held; if (!(p instanceof Prop)) continue; const b = p.body; _v5.set(b.position.x, b.position.y, b.position.z); fn(_v5); b.position.set(_v5.x, _v5.y, _v5.z); } }
 function resolvePlayer() {
   rig.updateMatrixWorld(true); const h = headPos(_v4), B = WALK[game.area], r = 0.2; let px = 0, pz = 0;
   if (h.x < B.x0) px += B.x0 - h.x; if (h.x > B.x1) px += B.x1 - h.x; if (h.z < B.z0) pz += B.z0 - h.z; if (h.z > B.z1) pz += B.z1 - h.z;
-  for (const a of NAV[game.area]) { const x0 = a.x0 - r, x1 = a.x1 + r, z0 = a.z0 - r, z1 = a.z1 + r, x = h.x + px, z = h.z + pz; if (x > x0 && x < x1 && z > z0 && z < z1) { const o = [[x0 - x, 0], [x1 - x, 0], [0, z0 - z], [0, z1 - z]]; o.sort((u, v) => Math.hypot(...u) - Math.hypot(...v)); px += o[0][0]; pz += o[0][1]; } }
+  for (const a of NAV[game.area]) {
+    const [lx, lz, cx, cz, hx, hz] = navLocal(a, h.x + px, h.z + pz), ux = lx - cx, uz = lz - cz, ex = hx + r - Math.abs(ux), ez = hz + r - Math.abs(uz);
+    if (ex <= 0 || ez <= 0) continue; let qx = 0, qz = 0; if (ex < ez) qx = Math.sign(ux || 1) * ex; else qz = Math.sign(uz || 1) * ez;
+    if (a.obb) { const c = Math.cos(a.yaw), s = Math.sin(a.yaw); px += qx * c + qz * s; pz += -qx * s + qz * c; } else { px += qx; pz += qz; }
+  }
   if (px || pz) { rig.position.x += px; rig.position.z += pz; shiftHeld(v => { v.x += px; v.z += pz; }); }
 }
 const loco = { snapReady: true, vig: 0, fade: 0, pending: null };
@@ -2496,7 +2503,7 @@ class FloatButton {
     addMesh(this.group, new THREE.CylinderGeometry(0.075, 0.085, 0.04, 28), MAT.gold, 0, 0, 0, Math.PI / 2);
     this.capMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: 1.2, toneMapped: false }); this.cap = addMesh(this.group, new THREE.CylinderGeometry(0.06, 0.062, 0.04, 28), this.capMat, 0, 0, 0.025, Math.PI / 2);
     this.label = new TextSprite(text, { size: 0.07, w: 512, h: 128, color: '#ffe08a' }); this.label.sprite.position.set(0, 0.13, 0); this.group.add(this.label.sprite);
-    this.group.traverse(o => { if (o.material) { o.material.depthTest = false; o.material.depthWrite = false; o.material.transparent = true; o.renderOrder = 1500; } }); this.label.sprite.renderOrder = 1501;
+    this.group.traverse(o => { if (o.material) { o.material = o.material.clone(); o.material.depthTest = false; o.material.depthWrite = false; o.material.transparent = true; o.renderOrder = 1500; } }); this.label.sprite.renderOrder = 1501;
     this.shownT = 0;
     this.btn = { radius: 0.075, wasInside: false, getCenter: () => this.group.localToWorld(_v3.set(0, 0, 0.03)), press: () => { if (!this.group.visible || this.cool > 0 || this.shownT < 0.5) return false; this.cool = 1.0; synth.play('click', 0.8); this.cap.position.z = 0.012; setTimeout(() => { this.cap.position.z = 0.025; }, 150); this.onPress(); return true; }, click: () => this.btn.press() };
     tagTargets(this.group, this.btn); pokeables.push(this.btn);
