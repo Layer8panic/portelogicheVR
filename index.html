@@ -357,14 +357,14 @@ const STATIONS_CFG = [
     inputs: { A: 0, B: 0 }, desc: { A: 'Rubinetto imbottitura', B: 'Rubinetto filo' }, build: I => new GateNode('g1', 'AND', [I.A, I.B]) },
   { key: 'train', gate: 'OR', title: 'Il trenino dei regali', elf: 2, ang: 230, task: 'Il trenino parte col carbone O con la batteria. Premi i tasti verdi 1 o rossi 0.',
     inputs: { A: 0, B: 0 }, desc: { A: 'Carbone', B: 'Batteria' }, build: I => new GateNode('g1', 'OR', [I.A, I.B]) },
-  { key: 'wrap', gate: 'XOR', title: 'Il nastro dei pacchetti', elf: 3, ang: 310, task: 'Una chiave per lato: il nastro si muove solo se le chiavi sono in posizioni DIVERSE. Girane una!',
-    inputs: { A: 1, B: 1 }, desc: { A: 'Chiave sinistra', B: 'Chiave destra' }, build: I => new GateNode('g1', 'XOR', [I.A, I.B]) },
+  { key: 'wrap', gate: 'XOR', title: 'Il nastro dei pacchetti', elf: 3, ang: 310, task: 'Due chiavi, una per lato. Il nastro parte solo se UNA SOLA chiave è su 1. Tutte e due su 1 = blocco di sicurezza. Gira una chiave!',
+    inputs: { A: 1, B: 1 }, desc: { A: 'Chiave di Fiocco', B: 'Chiave di Neve' }, build: I => new GateNode('g1', 'XOR', [I.A, I.B]) },
   { key: 'snow', gate: 'NOR', title: 'Il cannone della neve', elf: 4, ang: 350, task: 'Il cannone spara neve solo se NESSUNO sportello è aperto. Chiudili con le leve di zucchero!',
     inputs: { A: 1, B: 1 }, desc: { A: 'Sportello sinistro aperto', B: 'Sportello destro aperto' }, build: I => new GateNode('g1', 'NOR', [I.A, I.B]) },
-  { key: 'scale', gate: 'XNOR', title: 'La bilancia dei regali', elf: 5, ang: 30, task: 'Il cavo si è staccato! Collegalo alla porta giusta: Y = 1 solo se A e B sono UGUALI.',
-    inputs: { A: 0, B: 0 }, desc: { A: 'Pacco a sinistra', B: 'Pacco a destra' }, plug: true, target: v => v.A === v.B, build: I => new SocketNode('s1', [I.A, I.B]) },
+  { key: 'scale', gate: 'XNOR', title: 'La bilancia dei regali', elf: 5, ang: 30, task: '1) Infila lo spinotto rosso in una presa. 2) Metti i pacchi sui piatti e guarda la lampada. Deve accendersi solo se i piatti sono UGUALI (tutti e due vuoti o tutti e due pieni).',
+    inputs: { A: 0, B: 0 }, desc: { A: 'Pacco sul piatto sinistro', B: 'Pacco sul piatto destro' }, plug: true, target: v => v.A === v.B, build: I => new SocketNode('s1', [I.A, I.B]) },
   { key: 'gate', gate: 'NAND', title: 'Il portone del magazzino', elf: 6, ang: 270, task: 'Suona la combinazione e tieni Y a 1 per 2 secondi. A e B diversi, almeno uno tra C e D, MAI A e D insieme!',
-    inputs: { A: 0, B: 0, C: 0, D: 0 }, desc: { A: 'Tasto Do', B: 'Tasto Mi', C: 'Tasto Sol', D: 'Tasto Si' }, hold: 2.0,
+    inputs: { A: 0, B: 0, C: 0, D: 0 }, desc: { A: 'Nota La', B: 'Nota Si', C: 'Nota Do', D: 'Nota Re' }, hold: 2.0,
     build: I => new GateNode('g6', 'AND', [new GateNode('g3', 'AND', [new GateNode('g1', 'XOR', [I.A, I.B]), new GateNode('g2', 'OR', [I.C, I.D])]), new GateNode('g5', 'NAND', [I.A, I.D])]) }
 ];
 const ELF_NAMES = ['Zenzero', 'Bottoncino', 'Fischietto', 'Fiocco', 'Brina', 'Pesetta', 'Tastino', 'Neve', 'Pino'];
@@ -388,13 +388,13 @@ const SCRIPT = {
       win: [[1, 'Orsetti morbidissimi! Grazie, grazie, grazie!'], [8, 'Questo orsetto somiglia a me. Stessa pancia.'], [7, 'Prossima fermata: il trenino di Fischietto!']] },
     { intro: [[2, 'Ciuf ciuf! Il mio trenino va a carbone OPPURE a batteria.'], [2, 'Alla porta OR basta UN ingresso a 1. Premi i tasti: verde = 1, rosso = 0!']],
       win: [[2, 'Si parte! Tutti in carrozza!'], [7, 'La OR è generosa: le basta poco per dire sì.'], [8, 'Io salgo sul vagone dei biscotti!']] },
-    { intro: [[3, 'Il nastro dei pacchetti ha una chiave per lato, così lo comandiamo da tutte e due le parti.'], [3, 'È una XOR: si muove solo se le chiavi sono DIVERSE. Afferra una chiave e girala col polso!']],
+    { intro: [[3, 'Questa è l\'incartatrice: i pacchi marroni entrano nel tunnel e escono incartati!'], [3, 'Ci sono due chiavi, una per lato, una mia e una di Neve. Adesso sono tutte e due su 1… e il nastro è bloccato.'], [7, 'È la regola di sicurezza: se giriamo tutte e due le chiavi insieme, il nastro si ferma. Deve girarne UNA SOLA.'], [3, 'È una porta XOR, "o l\'una o l\'altra": 1 solo se le chiavi sono DIVERSE. Tocca una chiave, oppure afferrala e ruota il polso!']],
       win: [[3, 'I pacchetti viaggiano e si incartano da soli! Che meraviglia!'], [7, 'La XOR è come l\'interruttore delle scale di casa tua.'], [8, 'Io mi sono incartato un piede. Qualcuno mi aiuta?']] },
     { intro: [[4, 'Brrr! Il cannone spara neve solo se NESSUNO sportello è aperto.'], [4, 'È una NOR, cioè NOT OR: dà 1 solo se tutti gli ingressi sono 0. Abbassa le leve di zucchero!']],
       win: [[4, 'Nevica sul villaggio in miniatura! Guarda che bello!'], [7, 'Lo sapevi? NOT(A OR B) è uguale a (NOT A) AND (NOT B): la legge di De Morgan!'], [8, 'Ho preso una palla di neve in faccia. È stato bellissimo.']] },
-    { intro: [[5, 'Questa bilancia controlla che i due pacchi siano uguali. Ma il cavo si è staccato!'], [5, 'Vedi il pannello di legno con 5 prese? Ognuna è una porta logica diversa: AND, OR, XOR, XNOR, NAND.'], [5, 'Prendi lo SPINOTTO ROSSO che brilla sul banco e infilalo in una presa. Se è quella sbagliata salta fuori: riprova!'], [5, 'Indizio: Y deve fare 1 quando A e B sono UGUALI, cioè 0-0 oppure 1-1. Guarda la tabella sulla lavagna!']],
+    { intro: [[5, 'Questa è la bilancia dei regali: controlla che i due piatti siano UGUALI, così i pacchi partono in coppia.'], [5, 'Ma ha perso il suo cervello! Alla tua sinistra c\'è un pannello con 5 prese: ognuna è una porta logica diversa.'], [5, 'Prendi lo SPINOTTO ROSSO sulla mensola e infilalo in una presa. Poi metti i due pacchi sui piatti e guarda la lampada.'], [7, 'La lampada deve accendersi quando i piatti sono uguali: tutti e due vuoti, oppure tutti e due con un pacco. Se sbagli porta, sfila lo spinotto e riprova!']],
       win: [[5, 'Perfettamente in equilibrio! Era una XNOR, il comparatore!'], [8, 'Io peso esattamente… un elfo e mezzo.'], [7, 'Ultima macchina: il portone del magazzino. Tastino lo apre col pianoforte!']] },
-    { intro: [[6, 'Il portone si apre suonando la combinazione giusta sui tasti A, B, C e D.'], [6, 'Ricorda: A e B diversi, almeno uno tra C e D, ma MAI A e D insieme. Poi tieni Y a 1 per 2 secondi!']],
+    { intro: [[6, 'Il portone si apre suonando la combinazione giusta sul pianoforte: A è il La, B il Si, C il Do e D il Re, proprio come nella notazione inglese!'], [6, 'Ricorda: A e B diversi, almeno uno tra C e D, ma MAI A e D insieme. Poi tieni Y a 1 per 2 secondi!']],
       win: [[6, 'Si apre! Il magazzino è pieno di regali!'], ['S', 'Oh oh oh! Ce l\'avete fatta! Avete salvato il Natale!', 'wave'], ['S', 'Quella era una NAND, la porta universale: con le NAND si può costruire qualsiasi circuito.'], ['S', 'Venite in salotto: vi ho preparato latte e biscotti!']] }
   ],
   living: [['S', 'Ecco qua: latte caldo e i famosi biscotti di Zenzero. Prendine uno e avvicinalo alla bocca!']],
@@ -780,7 +780,7 @@ class Character {
     this.bubble = new Bubble();
   }
   headWorld(out) { return this.head.localToWorld(out.set(0, this.topY, 0)); }
-  say(text, dur) { this.bubble.set(this.name, text, this.color); this.bubble.sprite.visible = true; this.talking = dur; this.useBlips = !voice.speak(this, text); }
+  say(text, dur) { this.bubble.set(this.name, text, this.color); this.bubble.sprite.visible = true; this.talking = dur; this.useBlips = !voice.speak(this, text); this.blipN = 0; this.blipT = 0; }
   hush() { this.bubble.sprite.visible = false; this.talking = 0; }
   placeAt(x, z, yaw) { this.root.position.set(x, 0, z); if (yaw !== undefined) this.root.rotation.y = yaw; this.walk = null; }
   walkTo(x, z, speed = 1.0, cb = null) { this.walk = { x, z, speed, cb }; this.mode = 'walk'; }
@@ -809,7 +809,7 @@ class Character {
     else if (m === 'eat') { const k = this.eatK || 0; Object.assign(target, { sRx: -0.35 - 1.0 * k, eR: -0.5 - 1.5 * k, sRz: -0.13 + 0.45 * k, hp: 0.12 * k }); }
     else if (m === 'sit') { Object.assign(target, { lLx: -1.45, lRx: -1.45, kL: 1.45, kR: 1.45, y: -this.hipY * 0.42, sLx: -0.4, sRx: -0.4, eL: -0.6, eR: -0.6 }); }
     if (this.talking > 0) { this.talking -= dt; target.mouth = Math.max(target.mouth, 0.35 + 0.65 * Math.abs(Math.sin(T * 17))); if (m === 'idle' || m === 'talk') { target.sRx = -0.55 + 0.3 * Math.sin(T * 2.3); target.eR = -0.9 + 0.3 * Math.sin(T * 3.1); target.hp += 0.05 * Math.sin(T * 5); }
-      this.blipT -= dt; if (this.useBlips && this.blipT <= 0 && this.talking > 0.25) { this.blipT = this.kind === 'santa' ? 0.13 : 0.085; voice.blip(this); }
+      this.blipT -= dt; if (this.useBlips && this.blipT <= 0 && this.blipN < (this.kind === 'santa' ? 3 : 4)) { this.blipT = this.kind === 'santa' ? 0.24 : 0.13; this.blipN++; voice.blip(this); }
       if (this.talking <= 0) this.hush(); }
     // sguardo verso il giocatore
     if (head && m !== 'walk') {
@@ -831,7 +831,7 @@ class Character {
     this.blink = Math.max(0, this.blink - dt * 7); const lidA = lerp(this.lidOpen, this.lidClosed, this.blink > 0.5 ? (1 - this.blink) * 2 : this.blink * 2);
     for (const l of this.lids) l.rotation.x = lidA;
     // fumetto sopra la testa
-    if (this.bubble.sprite.visible) { this.headWorld(this.bubble.sprite.position); this.bubble.sprite.position.y += 0.13 + 0.015 * Math.sin(T * 6); }
+    if (this.bubble.sprite.visible) { const bp = this.headWorld(this.bubble.sprite.position); bp.y += 0.3; if (head) { _v5.subVectors(head, bp); _v5.y = 0; const d = _v5.length(); if (d > 0.5) bp.addScaledVector(_v5, Math.min(0.35, d * 0.25) / d); } }
   }
 }
 function buildSanta(c) {
@@ -971,7 +971,7 @@ const HORSE_URLS = ['https://cdn.jsdelivr.net/gh/mrdoob/three.js@r170/examples/m
 function antlerPair(scale) {
   const g = new THREE.Group(), m = std(0xd9c39a, 0.7);
   for (const s of [-1, 1]) {
-    const main = [new V3(0, 0, 0), new V3(s * 0.05, 0.1, -0.03), new V3(s * 0.13, 0.22, -0.08), new V3(s * 0.19, 0.34, -0.04), new V3(s * 0.2, 0.45, 0.04)];
+    const main = [new V3(s * 0.045, 0, 0), new V3(s * 0.07, 0.1, -0.03), new V3(s * 0.13, 0.22, -0.08), new V3(s * 0.19, 0.34, -0.04), new V3(s * 0.2, 0.45, 0.04)];
     addMesh(g, taperTube(main, 0.022, 0.008, 20, 8), m);
     for (const [t, dx, dy, dz] of [[0.35, 0.02, 0.1, 0.07], [0.6, 0.05, 0.11, 0.06], [0.82, -0.02, 0.09, 0.08]]) {
       const c = new THREE.CatmullRomCurve3(main).getPointAt(t);
@@ -999,9 +999,12 @@ class Reindeer {
     addMesh(this.neck, fluffy(0.1, 0.12, 5, 20, 14, 2), CREAM, 0, 0.08, 0.13, 0, 0, 0, 0.9, 1.3, 0.7);
     const H = this.head = new THREE.Group(); H.position.set(0, 0.36, 0.17); this.neck.add(H);
     addMesh(H, new THREE.SphereGeometry(0.11, 24, 18), FUR, 0, 0, 0, 0, 0, 0, 0.95, 0.95, 1.1);
-    addMesh(H, new THREE.CapsuleGeometry(0.065, 0.12, 8, 16), FUR, 0, -0.04, 0.13, Math.PI / 2 - 0.35);
-    addMesh(H, new THREE.SphereGeometry(0.06, 16, 12), CREAM, 0, -0.07, 0.17, 0, 0, 0, 1, 0.7, 1.1);
-    this.nose = addMesh(H, new THREE.SphereGeometry(0.036, 16, 12), this.lead ? glowMat(0xffd34d, 1.6) : std(0x2a1812, 0.3), 0, -0.04, 0.235);
+    addMesh(H, new THREE.CapsuleGeometry(0.062, 0.13, 8, 16), FUR, 0, -0.045, 0.12, Math.PI / 2 + 0.35);
+    addMesh(H, new THREE.SphereGeometry(0.058, 16, 12), CREAM, 0, -0.095, 0.18, 0, 0, 0, 1, 0.7, 1.15);
+    this.nose = addMesh(H, new THREE.SphereGeometry(0.034, 16, 12), this.lead ? glowMat(0xffd34d, 1.6) : std(0x2a1812, 0.3), 0, -0.075, 0.245);
+    for (const sx of [-1, 1]) addMesh(H, new THREE.SphereGeometry(0.008, 8, 6), std(0x1a0e0a, 0.6), sx * 0.018, -0.088, 0.262);
+    // collare con campanellino
+    addMesh(this.neck, new THREE.TorusGeometry(0.1, 0.018, 10, 32), MAT.red, 0, 0.24, 0.12, -1.12); addMesh(this.neck, new THREE.SphereGeometry(0.03, 12, 10), MAT.gold, 0, 0.17, 0.21);
     for (const sx of [-1, 1]) {
       const lid = makeEye(H, sx * 0.065, 0.03, 0.075, 0.026, 0x3a2414, FUR); lid.rotation.x = -0.75; (this.lids || (this.lids = [])).push(lid);
       const ear = new THREE.Group(); ear.position.set(sx * 0.085, 0.07, -0.02); ear.rotation.z = sx * -1.0; H.add(ear); addMesh(ear, new THREE.ConeGeometry(0.035, 0.12, 12), FUR, 0, 0.06, 0, 0, 0, 0, 1, 1, 0.45); addMesh(ear, new THREE.ConeGeometry(0.022, 0.08, 10), CREAM, 0, 0.05, 0.008, 0, 0, 0, 1, 1, 0.3);
@@ -1016,7 +1019,7 @@ class Reindeer {
       const knee = new THREE.Group(); knee.position.y = -0.42; hip.add(knee);
       addMesh(knee, taperTube([new V3(0, 0, 0), new V3(0, -0.2, 0), new V3(0, -0.4, 0)], 0.04, 0.032, 10, 8), DARK);
       addMesh(knee, fluffyTorus(0.04, 0.016, 0.3, 8, 24, 6), CREAM, 0, -0.36, 0, Math.PI / 2);
-      addMesh(knee, new THREE.CylinderGeometry(0.036, 0.045, 0.06, 14), HOOF, 0, -0.43, 0.01);
+      addMesh(knee, new THREE.SphereGeometry(0.046, 14, 10), HOOF, 0, -0.43, 0.012, 0, 0, 0, 0.9, 0.62, 1.15);
       this.legs.push({ hip, knee, front, x });
     }
     // finimenti rossi con campanelli d'oro
@@ -1039,14 +1042,17 @@ class Reindeer {
     const off = [0, 0.35, Math.PI, Math.PI + 0.35], amp = flying ? 0.45 : 0.75;
     this.legs.forEach((l, k) => {
       const ph = p + off[k], sw = Math.sin(ph);
-      const hipA = g * amp * sw + (flying ? (l.front ? -0.5 : 0.55) * g : 0), kneeA = g * (l.front ? 1 : -1) * Math.max(0, Math.cos(ph)) * 1.1;
-      l.hip.rotation.x = -hipA; l.knee.rotation.x = l.front ? kneeA : kneeA;
+      const hipA = g * amp * sw + (flying ? (l.front ? -0.5 : 0.55) * g : 0);
+      const lift = Math.max(0, Math.cos(ph)), kneeA = l.front ? g * lift * 1.2 : g * (0.25 + lift * 0.7);
+      const paw = (!g && this.pawT > 0 && k === 0) ? Math.max(0, Math.sin(this.pawT * 9)) : 0;
+      l.hip.rotation.x = -hipA - paw * 0.35; l.knee.rotation.x = kneeA + paw * 1.1;
     });
     const bob = g * Math.abs(Math.sin(p)) * 0.06; this.body.position.y = 0.92 + bob; this.body.rotation.x = g * 0.06 * Math.sin(p * 2);
     // a riposo: respiro, orecchie, coda, testa che si guarda intorno
-    this.idleT -= dt; if (this.idleT <= 0) { this.idleT = rnd(2.5, 6); this.lookT = rnd(-0.6, 0.6); }
+    this.idleT -= dt; if (this.idleT <= 0) { this.idleT = rnd(2.5, 6); this.lookT = rnd(-0.6, 0.6); const r = Math.random(); if (r < 0.3) this.pawT = 1.2; else if (r < 0.5) this.grazeT = 2.5; }
+    this.pawT = Math.max(0, (this.pawT || 0) - dt); this.grazeT = Math.max(0, (this.grazeT || 0) - dt); const graze = g < 0.05 ? smooth(Math.min(1, this.grazeT, 2.5 - this.grazeT)) : 0;
     this.look += (this.lookT * (1 - g) - this.look) * Math.min(1, dt * 2);
-    this.neck.rotation.x = -0.1 + g * 0.25 * Math.sin(p * 2 + 0.5) + (1 - g) * 0.04 * Math.sin(t * 1.3 + this.phase);
+    this.neck.rotation.x = -0.1 + g * 0.25 * Math.sin(p * 2 + 0.5) + (1 - g) * 0.04 * Math.sin(t * 1.3 + this.phase) + graze * 1.0;
     this.neck.rotation.y = this.look; this.head.rotation.x = 0.25 - g * 0.15;
     this.ears.forEach((e, k) => { e.rotation.x = 0.15 * Math.sin(t * (k ? 3.1 : 2.3) + this.phase) * Math.max(0, Math.sin(t * 0.7 + k)); });
     this.tail.rotation.x = -0.4 + 0.25 * Math.sin(t * 6 + this.phase) * (0.3 + g);
@@ -1076,8 +1082,8 @@ function buildSleigh() {
   for (const x of [0.6, -0.53]) { addMesh(g, side, LAC, x, 0, 0); addMesh(g, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(outline.map(q => new V3(x + (x > 0 ? -0.035 : -0.035), q.y, q.z)), true), 160, 0.018, 8, true), TRIM); }
   addMesh(g, rbox(1.1, 0.06, 1.7, 0.03), LAC, 0, 0.28, -0.12);
   addMesh(g, rbox(1.12, 0.5, 0.08, 0.04), LAC, 0, 0.5, 0.78, -0.15);
-  addMesh(g, rbox(1.0, 0.14, 0.5, 0.06), MAT.velvetGreen, 0, 0.68, -0.55);
-  addMesh(g, rbox(1.0, 0.5, 0.12, 0.06), MAT.velvetGreen, 0, 0.95, -0.85, -0.18);
+  addMesh(g, rbox(1.0, 0.14, 0.55, 0.06), MAT.velvetGreen, 0, 0.62, -0.2);
+  addMesh(g, rbox(1.0, 0.55, 0.12, 0.06), MAT.velvetGreen, 0, 0.9, -0.52, -0.18);
   for (const sx of [-1, 1]) {
     const run = [new V3(sx * 0.48, 0.03, -1.15), new V3(sx * 0.48, 0.0, -0.6), new V3(sx * 0.48, 0.0, 0.6), new V3(sx * 0.48, 0.07, 1.1), new V3(sx * 0.48, 0.3, 1.32), new V3(sx * 0.48, 0.52, 1.25), new V3(sx * 0.48, 0.5, 1.08), new V3(sx * 0.48, 0.38, 1.12)];
     addMesh(g, taperTube(run, 0.026, 0.02, 80, 10), TRIM);
@@ -1086,11 +1092,11 @@ function buildSleigh() {
     addMesh(g, new THREE.SphereGeometry(0.05, 12, 10), glowMat(0xffd080, 2.5), sx * 0.6, 0.92, 0.8);
   }
   // sacco dei regali e pacchi
-  addMesh(g, fluffy(0.45, 0.1, 3, 32, 24, 2), std(0x8a6a44, 0.95), 0, 1.0, -0.35, 0, 0, 0, 1, 1.15, 0.85);
-  addMesh(g, fluffyTorus(0.12, 0.025, 0.3, 8), std(0xd9b46a, 0.8), 0, 1.5, -0.35, Math.PI / 2);
+  addMesh(g, fluffy(0.4, 0.1, 3, 32, 24, 2), std(0x8a6a44, 0.95), 0, 0.85, -0.85, 0, 0, 0, 1.05, 1.1, 0.75);
+  addMesh(g, fluffyTorus(0.11, 0.025, 0.3, 8), std(0xd9b46a, 0.8), 0, 1.3, -0.85, Math.PI / 2);
   srand(99);
-  for (let k = 0; k < 9; k++) { const b = giftBox(srr(0.18, 0.3), srr(0.15, 0.28), srr(0.18, 0.3), k, k + 1); b.position.set(srr(-0.4, 0.4), 0.42 + (k > 5 ? 0.25 : 0), srr(0.05, 0.6)); b.rotation.y = srr(-0.5, 0.5); g.add(b); }
-  g.userData.seat = new THREE.Object3D(); g.userData.seat.position.set(0, 0.38, -0.4); g.add(g.userData.seat);
+  for (let k = 0; k < 9; k++) { const b = giftBox(srr(0.16, 0.26), srr(0.14, 0.24), srr(0.16, 0.26), k, k + 1); b.position.set(k % 2 ? srr(0.22, 0.4) : srr(-0.4, -0.22), 0.45 + Math.floor(k / 4) * 0.2, srr(-1.0, -0.7)); b.rotation.y = srr(-0.5, 0.5); g.add(b); }
+  g.userData.seat = new THREE.Object3D(); g.userData.seat.position.set(0, 0.36, -0.22); g.add(g.userData.seat);
   return g;
 }
 
@@ -1420,7 +1426,7 @@ class Device {
 // rubinetto a ruota: si gira con la mano (o con un dito, come una manovella)
 class ValveInput extends Device {
   constructor(frame, pos, node, desc, color = 0xc8202c) {
-    super(frame, pos, node); this.maxA = Math.PI; this.wasTouch = false; this.cool = 0; this.angle = node.value ? this.maxA : 0; this.vel = 0; this.auto = null; this.R = 0.11;
+    super(frame, pos, node); this.maxA = Math.PI * 1.5; this.angle = node.value ? this.maxA : 0; this.vel = 0; this.auto = null; this.R = 0.11;
     const g = this.group;
     addMesh(g, new THREE.CylinderGeometry(0.035, 0.035, 0.12, 14), MAT.brass, 0, 0, -0.03, Math.PI / 2);
     this.wheel = new THREE.Group(); this.wheel.position.z = 0.05; g.add(this.wheel);
@@ -1434,22 +1440,20 @@ class ValveInput extends Device {
   grabCenter(out) { return this.wheel.localToWorld(out.set(0, 0, 0)); }
   grabDist(p) { this.local(p, _v4); return Math.max(0, Math.hypot(_v4.x, _v4.y) - this.R - 0.03) + Math.max(0, Math.abs(_v4.z - 0.05) - 0.05); }
   haloSize() { return 0.32; }
-  onGrab(I) { if (!this.active()) return false; this.holder = I; this.local(I.pos, _v4); this.phi = Math.atan2(_v4.y, _v4.x); this.auto = null; this.a0 = this.angle; return true; }
+  onGrab(I) { if (!this.active()) return false; this.holder = I; this.local(I.pos, _v4); this.phi = Math.atan2(_v4.y, _v4.x); this.auto = null; return true; }
   onHold(I, dt) {
     if (this.holder !== I) return; this.local(I.pos, _v4); const phi = Math.atan2(_v4.y, _v4.x); let d = phi - this.phi; d = Math.atan2(Math.sin(d), Math.cos(d)); this.phi = phi;
-    if (Math.hypot(_v4.x, _v4.y) > 0.02) { const prev = this.angle; this.angle = clamp(this.angle + d * 1.6, 0, this.maxA); this.vel = (this.angle - prev) / Math.max(dt, 1e-3); }
+    if (Math.hypot(_v4.x, _v4.y) > 0.03) { const prev = this.angle; this.angle = clamp(this.angle + d, 0, this.maxA); this.vel = (this.angle - prev) / Math.max(dt, 1e-3); }
     if (Math.hypot(_v4.x, _v4.y, _v4.z) > 0.4) { this.onRelease(I); I.held = null; }
   }
-  onRelease(I) { if (this.holder !== I) return; this.holder = null; const from = this.a0 > this.maxA / 2 ? this.maxA : 0, moved = Math.abs(this.angle - from) > this.maxA * 0.2; this.auto = moved ? this.maxA - from : from; this.vel = 0; }
-  click() { if (this.cool > 0) return; this.cool = 0.6; this.auto = this.node.value ? 0 : this.maxA; synth.play('squeak', 0.6, 1, this.group.getWorldPosition(new V3())); }
+  onRelease(I) { if (this.holder === I) this.holder = null; }
+  click() { this.auto = this.node.value ? 0 : this.maxA; synth.play('squeak', 0.6, 1, this.group.getWorldPosition(new V3())); }
   touch(touches) {
-    if (this.holder || !this.active()) return; let any = false;
-    for (const t of touches) { this.local(t.pos, _v4); if (Math.hypot(_v4.x, _v4.y) < this.R + 0.04 && Math.abs(_v4.z - 0.05) < 0.06) any = true; }
-    if (any && !this.wasTouch) this.click(); this.wasTouch = any;
+    if (this.holder || !this.active()) return;
+    for (const t of touches) { this.local(t.pos, _v4); const r = Math.hypot(_v4.x, _v4.y); if (Math.abs(r - this.R) < 0.035 && Math.abs(_v4.z - 0.05) < 0.05 && r > 0.02) { this.localVel(t.vel, _v5); const vt = (-_v4.y * _v5.x + _v4.x * _v5.y) / r; if (Math.abs(vt) > 0.05) { this.vel = vt / this.R; this.auto = null; } } }
   }
   update(dt) {
-    this.cool = Math.max(0, this.cool - dt);
-    if (!this.holder) { if (this.auto !== null) { const d = this.auto - this.angle; this.vel = Math.sign(d) * 6; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 6); if (Math.abs(d) < 0.01) { this.auto = null; this.vel = 0; synth.play('latch', 0.4, 1, this.group.getWorldPosition(_v4)); } } }
+    if (!this.holder) { if (this.auto !== null) { const d = this.auto - this.angle; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 6); if (Math.abs(d) < 0.01) this.auto = null; } else { this.angle = clamp(this.angle + this.vel * dt, 0, this.maxA); this.vel *= Math.exp(-4 * dt); } }
     if (Math.abs(this.vel) > 1.5) { this.sqT = (this.sqT || 0) - dt; if (this.sqT <= 0) { this.sqT = 0.35; synth.play('squeak', 0.35, rnd(0.9, 1.2), this.group.getWorldPosition(_v4)); } }
     this.wheel.rotation.z = this.angle; this.setValue(this.angle > this.maxA * 0.5); setLamp(this.lampM, this.node.value); this.lbl.update(this.node.value);
   }
@@ -1464,7 +1468,7 @@ class ButtonPair extends Device {
       const capMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.25, emissive: col, emissiveIntensity: 0.15 });
       const cap = addMesh(g, new THREE.SphereGeometry(0.05, 24, 14, 0, TAU, 0, Math.PI / 2), capMat, x, 0.055, 0); cap.userData.base = 0.055;
       const t = new TextSprite(txt, { size: 0.045, w: 96, h: 96, bg: null, color: '#ffffff' }); t.sprite.position.set(x, 0.14, 0); g.add(t.sprite);
-      const btn = { radius: 0.072, wasInside: false, cool: 0, center: new V3(), cap, v, getCenter: () => cap.localToWorld(btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || btn.cool > 0) return false; btn.cool = 0.3; cap.position.y = 0.035; synth.play('click', 0.8, v ? 1.2 : 0.9, btn.getCenter()); this.setValue(!!v); return true; }, click: () => btn.press() };
+      const btn = { radius: 0.06, wasInside: false, cool: 0, center: new V3(), cap, v, getCenter: () => cap.localToWorld(btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || btn.cool > 0) return false; btn.cool = 0.3; cap.position.y = 0.035; synth.play('click', 0.8, v ? 1.2 : 0.9, btn.getCenter()); this.setValue(!!v); return true; }, click: () => btn.press() };
       cap.userData.target = btn; rayTargets.push(cap); pokeables.push(btn); this.caps.push(btn);
     });
     this.lampM = lamp(g, 0, 0.05, -0.065, 0.022); this.lbl = inputLabel(g, node, desc, 0, 0.27, 0);
@@ -1487,13 +1491,13 @@ class KeySwitch extends Device {
   }
   roll(I) { if (I.isMouse) return -I.pos.x * 12; this.group.getWorldQuaternion(_q2); _q2.invert().multiply(I.quat); _v4.set(1, 0, 0).applyQuaternion(_q2); return Math.atan2(_v4.y, _v4.x); }
   grabCenter(out) { return this.key.localToWorld(out.set(0, 0, 0.065)); }
-  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.06; }
-  haloSize() { return 0.16; }
+  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.04; }
+  haloSize() { return 0.14; }
   onGrab(I) { if (!this.active()) return false; this.holder = I; this.r0 = this.roll(I); this.a0 = this.angle; this.auto = null; return true; }
-  onHold(I, dt) { if (this.holder !== I) return; let d = this.roll(I) - this.r0; d = Math.atan2(Math.sin(d), Math.cos(d)); this.angle = clamp(this.a0 - d * 2, 0, Math.PI / 2); if (Math.abs(this.angle - this.a0) > 0.35) { this.auto = this.a0 > 0.7 ? 0 : Math.PI / 2; this.onRelease(I, true); I.held = null; return; } if (this.grabCenter(_v5).distanceTo(I.pos) > 0.3) { this.onRelease(I); I.held = null; } }
-  onRelease(I, keep) { if (this.holder === I) { this.holder = null; if (!keep) this.auto = this.angle > Math.PI / 4 ? Math.PI / 2 : 0; } }
+  onHold(I, dt) { if (this.holder !== I) return; let d = this.roll(I) - this.r0; d = Math.atan2(Math.sin(d), Math.cos(d)); this.angle = clamp(this.a0 - d, 0, Math.PI / 2); if (this.grabCenter(_v5).distanceTo(I.pos) > 0.3) { this.onRelease(I); I.held = null; } }
+  onRelease(I) { if (this.holder === I) { this.holder = null; this.auto = this.angle > Math.PI / 4 ? Math.PI / 2 : 0; } }
   click() { this.auto = this.node.value ? 0 : Math.PI / 2; }
-  touch(touches) { if (this.holder || !this.active()) return; let any = false; const c = this.grabCenter(_v5); for (const t of touches) if (t.pos.distanceTo(c) < 0.065 + t.r) any = true; if (any && !this.wasTouch && !(this.auto !== null)) this.click(); this.wasTouch = any; }
+  touch(touches) { if (this.holder || !this.active()) return; let any = false; const c = this.grabCenter(_v5); for (const t of touches) if (t.pos.distanceTo(c) < 0.045 + t.r) any = true; if (any && !this.wasTouch) this.click(); this.wasTouch = any; }
   update(dt) {
     if (!this.holder && this.auto !== null) { const d = this.auto - this.angle; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 7); if (Math.abs(d) < 0.01) { this.angle = this.auto; this.auto = null; synth.play('keyturn', 0.7, 1, this.group.getWorldPosition(_v4)); } }
     this.key.rotation.z = -this.angle; this.setValue(this.angle > Math.PI / 4); setLamp(this.lampM, this.node.value); this.lbl.update(this.node.value);
@@ -1514,16 +1518,21 @@ class CandyLever extends Device {
   }
   knobLocal(out) { return out.set(0, 0.035 + LR * Math.cos(this.theta), LR * Math.sin(this.theta)); }
   grabCenter(out) { return this.group.localToWorld(this.knobLocal(out)); }
-  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.055; }
-  haloSize() { return 0.13; }
+  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.036; }
+  haloSize() { return 0.11; }
   onGrab(I) { if (!this.active()) return false; this.holder = I; return true; }
   onHold(I, dt) { if (this.holder !== I) return; this.local(I.pos, _v4); const dy = _v4.y - 0.035, dz = _v4.z; const tgt = clamp(Math.atan2(dz, Math.max(0.02, dy)), -LMAX, LMAX), prev = this.theta; this.theta += (tgt - this.theta) * Math.min(1, dt * 20); this.w = (this.theta - prev) / Math.max(dt, 1e-3); if (Math.hypot(_v4.x, dy, dz) > 0.45) { this.onRelease(I); I.held = null; } }
   onRelease(I) { if (this.holder === I) this.holder = null; }
   click() { this.w = this.theta > 0 ? -9 : 9; }
   touch(touches) {
-    if (this.holder || !this.active()) return; let any = false;
-    for (const p of touches) { this.local(p.pos, _v4); for (let k = 0; k <= 4; k++) { const r = LR * k / 4; if (_v4.distanceTo(_v5.set(0, 0.035 + r * Math.cos(this.theta), r * Math.sin(this.theta))) < (k === 4 ? 0.05 : 0.03) + p.r) any = true; } }
-    if (any && !this.wasTouch) this.click(); this.wasTouch = any;
+    if (this.holder || !this.active()) return; const k = this.knobLocal(_v5); let any = false;
+    for (const p of touches) {
+      this.local(p.pos, _v4); const d = _v4.distanceTo(k), R = 0.038 + p.r; if (d >= R) continue; any = true;
+      const tx = 0, ty = -Math.sin(this.theta), tz = Math.cos(this.theta); const side = Math.sign((k.y - _v4.y) * ty + (k.z - _v4.z) * tz) || 1;
+      this.theta += side * (R - d) / LR * 0.9; this.localVel(p.vel, _v3); const vt = _v3.y * ty + _v3.z * tz; if (side * vt > 0) this.w = side * Math.max(Math.abs(this.w), Math.abs(vt) / LR);
+      if (!this.wasTouch) { const sp = _v3.length(); if (sp > 0.15 && Math.abs(vt) < 0.35 * sp) this.click(); }
+    }
+    this.wasTouch = any;
   }
   update(dt) {
     if (!this.holder) { const s = Math.sign(this.theta) || 1; this.w += s * 30 * dt; this.w *= Math.exp(-3 * dt); this.theta += this.w * dt; }
@@ -1540,10 +1549,19 @@ class ToggleButton extends Device {
     this.capMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: COL_FALSE, emissiveIntensity: 1.3, toneMapped: false });
     this.cap = addMesh(g, new THREE.CylinderGeometry(0.07, 0.072, 0.05, 28), this.capMat, 0, 0.075, 0);
     this.lbl = inputLabel(g, node, desc, 0, 0.27, 0);
-    this.btn = { radius: 0.092, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.cap.localToWorld(this.btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; synth.play('click', 0.8, 1, this.btn.getCenter()); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
+    this.btn = { radius: 0.075, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.cap.localToWorld(this.btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; synth.play('click', 0.8, 1, this.btn.getCenter()); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
     this.cap.userData.target = this.btn; rayTargets.push(this.cap); pokeables.push(this.btn);
   }
   update(dt) { this.btn.cool = Math.max(0, this.btn.cool - dt); const ty = this.node.value ? 0.06 : 0.078; this.cap.position.y += (ty - this.cap.position.y) * Math.min(1, dt * 12); this.capMat.emissive.setHex(this.node.value ? COL_TRUE : COL_FALSE); this.lbl.update(this.node.value); }
+}
+// nota di pianoforte: armoniche intere con decadimento più rapido per quelle alte e leggera stonatura delle corde
+function pianoNote(f, t, vel = 0.5, pos = null) {
+  const ctx = synth.ctx; if (!ctx || !synth.enabled) return; const out = ctx.createGain(); out.gain.value = vel;
+  if (pos) { const p = synth.panner(pos, 1.2); out.connect(p); p.connect(synth.master); } else out.connect(synth.master);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(9000, f * 9), t); lp.frequency.exponentialRampToValueAtTime(Math.max(400, f * 2), t + 1.4); lp.connect(out);
+  [[1, 1, 2.2], [2, 0.42, 1.4], [3, 0.2, 0.9], [4, 0.12, 0.6], [5, 0.06, 0.4]].forEach(([h, a, d]) => {
+    for (const det of [-0.6, 0.6]) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * h * (1 + det / 1200 * h); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(a * 0.5, t + 0.004); g.gain.exponentialRampToValueAtTime(a * 0.18, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g); g.connect(lp); o.start(t); o.stop(t + d + 0.05); }
+  });
 }
 // tasto gigante del pianoforte giocattolo (resta abbassato quando vale 1)
 class PianoKey extends Device {
@@ -1554,10 +1572,10 @@ class PianoKey extends Device {
     this.stripe = addMesh(this.pivot, rbox(0.15, 0.012, 0.06, 0.005), new THREE.MeshStandardMaterial({ color: 0x111111, emissive: COL_FALSE, emissiveIntensity: 1.4, toneMapped: false }), 0, 0.037, 0.42);
     const t = new TextSprite(node.id, { size: 0.07, w: 96, h: 96, bg: null, color: '#7a1218' }); t.sprite.position.set(0, 0.08, 0.3); this.pivot.add(t.sprite);
     this.lbl = inputLabel(g, node, desc, 0, 0.3, -0.05);
-    this.btn = { radius: 0.11, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.pivot.localToWorld(this.btn.center.set(0, 0.06, 0.38)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; this.play(); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
+    this.btn = { radius: 0.09, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.pivot.localToWorld(this.btn.center.set(0, 0.06, 0.38)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; this.play(); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
     tagTargets(this.pivot, this.btn); pokeables.push(this.btn);
   }
-  play() { if (!synth.ctx) return; const p = this.btn.getCenter(); music.ensure(); if (music.bus) music.box(this.freq, synth.ctx.currentTime + 0.01, 0.35, 1.2); synth.play('thud', 0.4, 1.4, p); }
+  play() { if (!synth.ctx) return; pianoNote(this.freq, synth.ctx.currentTime + 0.005, 0.5, this.btn.getCenter()); synth.play('thud', 0.15, 1.6, this.btn.getCenter()); }
   update(dt) { this.btn.cool = Math.max(0, this.btn.cool - dt); const ta = this.node.value ? 0.09 : 0; this.pivot.rotation.x += (ta - this.pivot.rotation.x) * Math.min(1, dt * 14); this.stripe.material.emissive.setHex(this.node.value ? COL_TRUE : COL_FALSE); this.lbl.update(this.node.value); }
 }
 // cavo con spinotto (corda simulata a punti) e pannello a prese
@@ -1598,7 +1616,7 @@ class PlugPanel {
     this.group.updateMatrixWorld(true); for (const s of this.sockets) this.group.localToWorld(s.world.copy(s.local));
     const anchor = this.group.localToWorld(this.anchorLocal.clone()); this.rope = new Rope(anchor, 18, 1.0, 0xc8202c);
     const m = new THREE.Group(); this.plugMat = new THREE.MeshStandardMaterial({ color: 0xc8202c, roughness: 0.4, emissive: 0xff3030, emissiveIntensity: 0.6 }); addMesh(m, new THREE.CylinderGeometry(0.022, 0.022, 0.08, 16), this.plugMat, 0, 0, 0, Math.PI / 2); addMesh(m, new THREE.CylinderGeometry(0.006, 0.006, 0.05, 8), MAT.silver, 0, 0, -0.055, Math.PI / 2);
-    const home = this.group.localToWorld(new V3(-0.2, -0.19, 0.24)); this.homePos = home.clone();
+    const home = this.homeWorld ? this.homeWorld.clone() : this.group.localToWorld(new V3(-0.2, -0.19, 0.24)); this.homePos = home.clone();
     this.plug = new Prop({ name: 'Spinotto', kind: 'plug', mesh: m, half: [0.02, 0.02, 0.055], mass: 0.1, sound: 'plastic', area: 'factory', home: { pos: home, quat: this.group.getWorldQuaternion(new Q()) }, respawn: 3 });
     this.plug.socketOwner = this; this.anchorW = anchor;
   }
@@ -1607,14 +1625,15 @@ class PlugPanel {
     plug.state = 'socket'; const b = plug.body; b.type = CANNON.Body.KINEMATIC; b.collisionResponse = false; b.velocity.setZero(); b.angularVelocity.setZero();
     const q = this.group.getWorldQuaternion(new Q()); b.position.set(s.world.x, s.world.y, s.world.z); _v4.set(0, 0, 0.04).applyQuaternion(q); b.position.x += _v4.x; b.position.y += _v4.y; b.position.z += _v4.z; b.quaternion.set(q.x, q.y, q.z, q.w);
     this.plugged = s; this.node.chipType = s.type; synth.play('plug', 1, 1, s.world);
-    if (this.station.checkTarget()) { this.locked = true; setLamp(this.okLamp, true); synth.play('magic', 0.6, 1, s.world); }
+    if (this.station.checkTarget()) { this.locked = true; setLamp(this.okLamp, true); synth.play('magic', 0.6, 1, s.world); if (this.station.onLock) this.station.onLock(); }
+    else if (this.keepWrong) { synth.play('spark', 0.5, 1.3, s.world); this.station.msg = [`Porta ${s.type}: prova i piatti e guarda la colonna OK`, CSS_WAIT]; if (this.station.onWrong) this.station.onWrong(s.type); }
     else { synth.play('spark', 0.9, 1, s.world); setTimeout(() => synth.play('error', 0.7, 1, s.world), 300); this.ejectT = 1.4; this.station.msg = ['✗ Porta sbagliata: guarda la colonna OK', CSS_FALSE]; if (this.station.onWrong) this.station.onWrong(s.type); }
   }
   detach(plug) { if (!this.plugged) return; this.plugged = null; this.node.chipType = null; this.ejectT = 0; plug.state = 'free'; plug.makeDynamic(); }
   update(dt) {
     if (!this.plug) return; const p = this.plug;
     if (this.ejectT > 0) { this.ejectT -= dt; if (this.ejectT <= 0 && this.plugged) { this.detach(p); p.grabCool = 0.6; const q = this.group.getWorldQuaternion(_q2); _v4.set(0, 1.2, 1.4).applyQuaternion(q); p.body.velocity.set(_v4.x, _v4.y, _v4.z); synth.play('pop', 0.8, 1, p.mesh.position); this.station.msg = ['Prova un\'altra porta!', CSS_WAIT]; } }
-    if (!this.plugged && !this.locked && (p.state === 'free' || p.state === 'held') && p.grabCool <= 0) { _v4.set(p.body.position.x, p.body.position.y, p.body.position.z); let best = null, bd = 0.11; for (const s of this.sockets) { const d = _v4.distanceTo(s.world); if (d < bd) { bd = d; best = s; } } if (best) this.insert(p, best); }
+    if (!this.plugged && !this.locked && (p.state === 'free' || p.state === 'held') && p.grabCool <= 0) { _v4.set(p.body.position.x, p.body.position.y, p.body.position.z); let best = null, bd = 0.065; for (const s of this.sockets) { const d = _v4.distanceTo(s.world); if (d < bd) { bd = d; best = s; } } if (best) this.insert(p, best); }
     // la corda limita la distanza dello spinotto
     const b = p.body, dx = b.position.x - this.anchorW.x, dy = b.position.y - this.anchorW.y, dz = b.position.z - this.anchorW.z, d = Math.hypot(dx, dy, dz), L = 1.05;
     if (d > L && p.state !== 'socket') { const k = L / d; b.position.set(this.anchorW.x + dx * k, this.anchorW.y + dy * k, this.anchorW.z + dz * k); const vr = (b.velocity.x * dx + b.velocity.y * dy + b.velocity.z * dz) / d; if (vr > 0) { b.velocity.x -= vr * dx / d; b.velocity.y -= vr * dy / d; b.velocity.z -= vr * dz / d; } }
@@ -2015,8 +2034,6 @@ class OvenDoor {
   animateTo(a) { this.auto = a; synth.play('creak', 0.5, rnd(1.0, 1.2), this.grabCenter(new V3())); }
   touch(touches) {
     if (this.holder || !isVisibleChain(this.group)) return;
-    let onHandle = false; for (const t of touches) if (this.grabDist(t.pos) < t.r + 0.01) onHandle = true;
-    if (onHandle && !this.wasHandle && this.auto === null) { this.click(); this.wasHandle = true; return; } this.wasHandle = onHandle; if (this.auto !== null) return;
     for (const t of touches) {
       const l = this.local(t.pos, _v4); if (Math.abs(l.x) > this.half + t.r) continue; const r = Math.hypot(l.y, l.z); if (r < 0.06 || r > this.L + 0.02) continue;
       const phi = Math.atan2(l.z, l.y), gap = (this.thick / 2 + t.r + 0.004) / r, d = phi - this.angle; if (Math.abs(d) > gap) continue;
@@ -2134,11 +2151,21 @@ const BUILDERS = {
     st.spools = [0, 1].map(k => { const s = addMesh(st.dyn, new THREE.CylinderGeometry(0.09, 0.09, 0.14, 20), RIBBONS[k], 0, 1.32, -1.45 + (k ? 0.12 : -0.12), Math.PI / 2); return s; });
     st.boxes = []; for (let k = 0; k < 6; k++) { const g = new THREE.Group(); st.dyn.add(g); const plain = addMesh(g, rbox(0.26, 0.22, 0.26, 0.03), std(0xc49a6c, 0.9), 0, 0.11, 0); const wrapped = giftBox(0.27, 0.23, 0.27, k, k + 1); wrapped.position.y = 0.115; g.add(wrapped); st.boxes.push({ g, plain, wrapped, o: k / 6 }); }
     st.belt = 0; addStaticLocal(F, 0, 0.78, -1.45, 1.65, 0.08, 0.33);
+    // cartelli chiari: stato del nastro, tunnel dell'incartatrice, frecce, "gira" sulle chiavi
+    st.status = new TextSprite('⛔ NASTRO FERMO', { size: 0.11, w: 1024, h: 128, color: CSS_FALSE }); st.status.sprite.position.set(0, 1.85, -1.45); st.dyn.add(st.status.sprite);
+    st.rule = new TextSprite('chiavi uguali = fermo · chiavi diverse = in moto', { size: 0.05, w: 1280, h: 96, color: '#ffe8c0' }); st.rule.sprite.position.set(0, 1.7, -1.45); st.dyn.add(st.rule.sprite);
+    const tun = textSign(['INCARTATRICE'], 0.62, 0.14, { w: 640, h: 144 }); tun.position.set(0, 1.4, -1.2); F.add(tun);
+    for (let k = 0; k < 5; k++) { const ar = addMesh(F, new THREE.ConeGeometry(0.035, 0.09, 3), MAT.gold, -1.3 + k * 0.62, 0.87, -1.12, 0, 0, -Math.PI / 2); ar.scale.z = 0.3; }
+    st.keyTips = [-0.55, 0.55].map(x => { const t = new TextSprite('↻ GIRA', { size: 0.045, w: 256, h: 96, color: '#ffe08a' }); t.sprite.position.set(x, 1.38, -0.55); st.dyn.add(t.sprite); return t; });
+    st.elfLocal = new V3(-1.05, 0, -0.45); st.compLocal = [new V3(1.05, 0, -0.45), new V3(1.6, 0, 0.3)];
     st.loop = 'beltLoop';
     st.fx = (dt, t) => {
       const v = st.run * 0.45; st.belt += v * dt; st.beltTex.offset.x = -st.belt / 3.1 * 6;
       st.spools.forEach(s => s.rotation.x += v * dt * 8);
       st.boxes.forEach(b => { const u = (st.belt / 3.0 + b.o) % 1, x = -1.45 + u * 2.9; b.g.position.set(x, 0.86, -1.45); b.plain.visible = x < 0; b.wrapped.visible = x >= 0; b.g.scale.setScalar(Math.min(1, Math.min(u, 1 - u) * 12)); });
+      const A = st.inputs.A.value, B = st.inputs.B.value, on = st.output.value;
+      st.status.set(on ? '✅ NASTRO IN MOTO' : A && B ? '⛔ FERMO: tutte e due le chiavi su 1' : '⛔ FERMO: tutte e due le chiavi su 0', on ? CSS_TRUE : CSS_FALSE);
+      st.keyTips.forEach(k => { k.sprite.visible = !st.solved; k.sprite.material.opacity = 0.6 + 0.4 * Math.sin(t * 4); });
     };
   },
   // 5 · cannone della neve: leve di zucchero (NOR)
@@ -2171,24 +2198,50 @@ const BUILDERS = {
   },
   // 6 · bilancia dei regali: pulsanti + spinotto da collegare (XNOR)
   scale(st) {
+    // tutto a portata di mano: bilancia sul banco davanti a te, pannello delle prese su un leggio a sinistra,
+    // due pacchi veri da appoggiare sui piatti (A = piatto sinistro, B = piatto destro)
     const F = st.frame; consoleDesk(st, 1.6);
-    st.dev(new ToggleButton(F, new V3(-0.6, 0.89, -0.6), st.inputs.A, 'Pacco a sinistra')); st.dev(new ToggleButton(F, new V3(-0.3, 0.89, -0.6), st.inputs.B, 'Pacco a destra'));
-    addMesh(F, rbox(0.72, 0.5, 0.06, 0.03), MAT.darkWood, 0.36, 1.1, -0.8);
-    st.panel = new PlugPanel(F, new V3(0.36, 1.12, -0.76), st.root, st); st.panel.group.userData.dynamic = true;
-    const S = new THREE.Group(); S.position.set(0, 0, -2.0); F.add(S);
-    addMesh(S, rbox(0.6, 0.1, 0.4, 0.04), MAT.gold, 0, 0.05, 0); addMesh(S, new THREE.CylinderGeometry(0.05, 0.07, 1.5, 16), MAT.gold, 0, 0.8, 0); addMesh(S, new THREE.SphereGeometry(0.08, 16, 12), MAT.gold, 0, 1.58, 0);
-    st.beam = new THREE.Group(); st.beam.position.set(0, 1.58, -2.0); st.dyn.add(st.beam); addMesh(st.beam, rbox(1.4, 0.05, 0.06, 0.02), MAT.gold, 0, 0, 0); for (const s of [-1, 1]) addMesh(st.beam, new THREE.SphereGeometry(0.035, 12, 8), MAT.gold, s * 0.7, 0, 0);
-    st.plates = [-1, 1].map((s, k) => { const p = new THREE.Group(); st.dyn.add(p); addMesh(p, new THREE.CylinderGeometry(0.22, 0.18, 0.03, 32), MAT.gold, 0, 0, 0); const chains = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 3, 1, true), new THREE.MeshStandardMaterial({ color: 0xc9a25a, metalness: 0.9, roughness: 0.3, wireframe: true })); chains.position.y = 0.225; p.add(chains); const gift = giftBox(0.2, 0.18, 0.2, k + 2, k); gift.position.y = 0.105; p.add(gift); return { p, s, gift }; });
-    st.okSign = new TextSprite('IN EQUILIBRIO', { size: 0.12, w: 768, h: 128, color: CSS_FALSE }); st.okSign.sprite.position.set(0, 2.1, -2.0); st.dyn.add(st.okSign.sprite);
-    addStaticLocal(F, 0, 0.8, -2.0, 0.3, 0.8, 0.2);
-    st.boardPose = { pos: new V3(0, 2.75, -3.1), ry: 0 };
-    st.onReset = () => { st.panel.reset(); };
-    st.onWrong = type => { const e = elves[5]; if (e && e.root.visible) { e.say(`Quella era una ${type}: con A e B uguali non dà sempre 1. Prova un'altra presa!`, 5); e.setMode('wave', 1.5); } };
-    st.onSolvedQuiet = () => { const s = st.panel.sockets.find(q => q.type === 'XNOR'); st.panel.insert(st.panel.plug, s); };
+    const S = new THREE.Group(); S.position.set(0, 0.865, -0.66); F.add(S);
+    addMesh(S, rbox(0.34, 0.05, 0.2, 0.02), MAT.gold, 0, 0.025, 0); addMesh(S, new THREE.CylinderGeometry(0.025, 0.035, 0.5, 16), MAT.gold, 0, 0.28, 0); addMesh(S, new THREE.SphereGeometry(0.045, 16, 12), MAT.gold, 0, 0.54, 0);
+    addMesh(S, starGeo(0.05, 0.015), MAT.gold, 0, 0.62, 0);
+    st.beam = new THREE.Group(); st.beam.position.set(0, 1.405, -0.66); st.dyn.add(st.beam); addMesh(st.beam, rbox(0.82, 0.03, 0.04, 0.012), MAT.gold, 0, 0, 0); for (const sx of [-1, 1]) addMesh(st.beam, new THREE.SphereGeometry(0.022, 12, 8), MAT.gold, sx * 0.4, 0, 0);
+    st.needle = addMesh(st.beam, new THREE.ConeGeometry(0.015, 0.16, 8), MAT.red, 0, 0.09, 0.025);
+    st.plates = [-1, 1].map(sx => { const p = new THREE.Group(); st.dyn.add(p); addMesh(p, new THREE.CylinderGeometry(0.15, 0.12, 0.022, 32), MAT.gold, 0, 0, 0); for (let k = 0; k < 3; k++) { const a = k / 3 * TAU; addMesh(p, new THREE.CylinderGeometry(0.003, 0.003, 0.27, 4), MAT.gold, Math.cos(a) * 0.065, 0.135, Math.sin(a) * 0.065, Math.sin(a) * 0.23, 0, -Math.cos(a) * 0.23); } return { p, sx, item: null, world: new V3() }; });
+    st.slots = st.plates.map((q, k) => ({ q, k, item: null, locked: false, detach(p) { if (this.item === p) this.item = null; p.state = 'free'; p.makeDynamic(); } }));
+    st.lblA = inputLabel(st.dyn, st.inputs.A, 'Piatto sinistro', -0.42, 1.68, -0.62); st.lblB = inputLabel(st.dyn, st.inputs.B, 'Piatto destro', 0.42, 1.68, -0.62);
+    st.okSign = new TextSprite('INFILA LO SPINOTTO', { size: 0.075, w: 768, h: 128, color: CSS_WAIT }); st.okSign.sprite.position.set(0, 1.86, -0.66); st.dyn.add(st.okSign.sprite);
+    st.bulbMat = new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0x000000, emissiveIntensity: 2, toneMapped: false }); addMesh(st.dyn, new THREE.SphereGeometry(0.05, 20, 14), st.bulbMat, 0, 1.76, -0.66);
+    // due pacchi veri, appoggiati sul banco
+    st.gifts = [0, 1].map(k => { const m = giftBox(0.13, 0.12, 0.13, k + 2, k + 1); const p = new Prop({ name: 'Pacco', mesh: m, half: [0.065, 0.06, 0.065], mass: 0.3, sound: 'soft', area: 'factory', home: { pos: st.L(k ? 0.68 : -0.68, 0.93, -0.5), quat: new Q().setFromEuler(new THREE.Euler(0, st.yaw, 0)) }, respawn: 4 }); p.onClick = () => { const sl = st.slots.find(s => s.item === p); if (sl) { sl.detach(p); p.respawnHome(false); } else { const free = st.slots.find(s => !s.item); if (free) putOnPlate(st, p, free); } }; return p; });
+    // leggio con il pannello delle prese e la mensola dello spinotto
+    addMesh(F, new THREE.CylinderGeometry(0.03, 0.05, 1.05, 12), MAT.darkWood, -1.2, 0.52, -0.68); addMesh(F, rbox(0.62, 0.04, 0.36, 0.02), MAT.wood, -1.12, 0.84, -0.5, 0, 0.6, 0); addStaticLocal(F, -1.12, 0.84, -0.5, 0.31, 0.02, 0.18, 0.6);
+    addMesh(F, rbox(0.72, 0.46, 0.05, 0.03), MAT.darkWood, -1.15, 1.16, -0.66, 0, 0.6, 0);
+    st.panel = new PlugPanel(F, new V3(-1.12, 1.18, -0.62), st.root, st); st.panel.group.rotation.y = 0.6; st.panel.group.userData.dynamic = true; st.panel.keepWrong = true; st.panel.homeWorld = st.L(-1.08, 0.9, -0.44);
+    const help = textSign(['① Spinotto nella presa', '② Pacchi sui piatti', '③ Lampada accesa solo se UGUALI'], 0.62, 0.3, { w: 768, h: 372, bg: '#1f5a3a', fg: '#fff4e0' }); help.position.set(1.12, 1.15, -0.62); help.rotation.y = -0.6; F.add(help);
+    addMesh(F, new THREE.CylinderGeometry(0.03, 0.05, 1.0, 12), MAT.darkWood, 1.12, 0.5, -0.66); addStaticLocal(F, 1.12, 0.5, -0.66, 0.05, 0.5, 0.05);
+    st.boardPose = { pos: new V3(0, 2.55, -2.3), ry: 0 };
+    const giveBack = () => { st.slots.forEach(sl => { if (sl.item) { const p = sl.item; sl.detach(p); p.respawnHome(false); } }); };
+    st.preEval = () => { st.inputs.A.value = !!st.slots[0].item; st.inputs.B.value = !!st.slots[1].item; };
+    // "dispositivi" virtuali per tastiera, aiuto e salti del docente: mettono o tolgono un pacco dal piatto
+    st.slots.forEach((sl, k) => st.dev({ node: st.inputs[k ? 'B' : 'A'], group: new THREE.Group(),
+      sync() { const want = this.node.value; if (want && !sl.item) { const g = st.gifts.find(p => !st.slots.some(o => o.item === p)); if (g) putOnPlate(st, g, sl); } else if (!want && sl.item) { const p = sl.item; sl.detach(p); p.respawnHome(false); } },
+      click() { if (sl.item) { const p = sl.item; sl.detach(p); p.respawnHome(false); } else { const g = st.gifts.find(p => !st.slots.some(o => o.item === p)); if (g) putOnPlate(st, g, sl); } } }));
+    st.onReset = () => { giveBack(); st.panel.reset(); };
+    st.onWrong = type => { const e = elves[5]; if (!e || !e.root.visible) return; const rows = st.truthRows(), bad = rows.find(r => r.y !== r.tgt); const txt = bad ? `Con la ${type}, se A = ${bad.bits[0]} e B = ${bad.bits[1]} la lampada ${bad.y ? 'si accende' : 'resta spenta'}… ma i piatti ${bad.tgt ? 'sono uguali' : 'sono diversi'}! Sfila lo spinotto e prova un'altra presa.` : 'Uhm, riprova!'; e.say(txt, 8); e.setMode('wave', 1.5); };
+    st.onLock = () => { const e = elves[5]; if (e && e.root.visible && !(st.inputs.A.value && st.inputs.B.value)) { e.say('Sì! Questa è la porta giusta! Adesso metti un pacco su OGNI piatto per pesarli insieme.', 6); e.setMode('cheer', 2); } };
+    st.onSolvedQuiet = () => { const s = st.panel.sockets.find(q => q.type === 'XNOR'); if (!st.panel.plugged) st.panel.insert(st.panel.plug, s); st.slots.forEach(sl => { if (!sl.item) { const g = st.gifts.find(p => !st.slots.some(o => o.item === p)); if (g) putOnPlate(st, g, sl); } }); };
     st.fx = (dt, t) => {
-      st.panel.update(dt); const tilt = ((st.inputs.B.value ? 1 : 0) - (st.inputs.A.value ? 1 : 0)) * 0.25; st.beam.rotation.z += (tilt - st.beam.rotation.z) * Math.min(1, dt * 3);
-      st.plates.forEach(q => { st.beam.localToWorld(_v4.set(q.s * 0.7, 0, 0)); st.dyn.worldToLocal(_v4); q.p.position.set(_v4.x, _v4.y - 0.45, _v4.z); q.gift.visible = st.inputs[q.s < 0 ? 'A' : 'B'].value; });
-      const ok = st.output.value && !!st.root.chipType; st.okSign.set(ok ? 'IN EQUILIBRIO ✓' : 'NON VERIFICATO', ok ? CSS_TRUE : CSS_FALSE);
+      st.panel.update(dt);
+      const tilt = ((st.inputs.A.value ? 1 : 0) - (st.inputs.B.value ? 1 : 0)) * 0.22; st.beam.rotation.z += (tilt - st.beam.rotation.z) * Math.min(1, dt * 3); st.beam.updateMatrixWorld(true);
+      st.plates.forEach(q => { st.beam.localToWorld(_v4.set(q.sx * 0.4, 0, 0)); q.world.copy(_v4).setY(_v4.y - 0.27); st.dyn.worldToLocal(_v5.copy(q.world)); q.p.position.copy(_v5); });
+      // un pacco lasciato vicino a un piatto ci si appoggia sopra
+      for (const g of st.gifts) { if (g.state !== 'free') continue; const b = g.body; for (const sl of st.slots) { if (sl.item) continue; const w = sl.q.world, dx = b.position.x - w.x, dz = b.position.z - w.z, dy = b.position.y - w.y; if (dx * dx + dz * dz < 0.15 * 0.15 && dy > -0.06 && dy < 0.35) { putOnPlate(st, g, sl); synth.play('soft', 0.8, 0.9, w); break; } } }
+      for (const sl of st.slots) if (sl.item) { const b = sl.item.body, w = sl.q.world; b.position.set(w.x, w.y + 0.072, w.z); b.velocity.setZero(); }
+      st.lblA.update(st.inputs.A.value); st.lblB.update(st.inputs.B.value);
+      const plugged = !!st.root.chipType, y = st.output.value;
+      st.bulbMat.emissive.setHex(!plugged ? 0x000000 : y ? COL_TRUE : COL_FALSE);
+      st.okSign.set(!plugged ? 'INFILA LO SPINOTTO' : y ? 'UGUALI ✓' : 'DIVERSI ✗', !plugged ? CSS_WAIT : y ? CSS_TRUE : CSS_FALSE);
+      if (st.panel.locked && !(st.inputs.A.value && st.inputs.B.value)) st.msg = ['Porta giusta! Ora un pacco su ogni piatto', CSS_WAIT];
     };
   },
   // 7 · portone del magazzino: pianoforte gigante (NAND) con serratura a tempo
@@ -2198,7 +2251,8 @@ const BUILDERS = {
     for (const x of [-0.45, 0.45]) addMesh(F, new THREE.CylinderGeometry(0.04, 0.05, 0.1, 12), MAT.gold, x, 0.05, -0.65);
     for (let k = 0; k < 3; k++) addMesh(F, rbox(0.06, 0.05, 0.22, 0.01), MAT.black, -0.22 + k * 0.22, 0.88, -1.03);
     addStaticLocal(F, 0, 0.42, -0.86, 0.55, 0.42, 0.31);
-    [['A', 523.25], ['B', 659.25], ['C', 783.99], ['D', 987.77]].forEach(([n, f], k) => st.dev(new PianoKey(F, new V3(-0.33 + k * 0.22, 0.88, -0.6), st.inputs[n], STATIONS_CFG[6].desc[n], f)));
+    // note vere in notazione inglese: A = La4, B = Si4, C = Do5, D = Re5
+    [['A', 440.0], ['B', 493.88], ['C', 523.25], ['D', 587.33]].forEach(([n, f], k) => st.dev(new PianoKey(F, new V3(-0.33 + k * 0.22, 0.88, -0.6), st.inputs[n], STATIONS_CFG[6].desc[n], f)));
     // grande portone ad arco
     const ar = new THREE.Shape(); ar.moveTo(-1.8, 0); ar.lineTo(1.8, 0); ar.lineTo(1.8, 3.6); ar.absarc(0, 3.6, 1.8, 0, Math.PI, false); ar.lineTo(-1.8, 0);
     const ho = new THREE.Path(); ho.moveTo(-1.5, 0); ho.lineTo(-1.5, 2.2); ho.absarc(0, 2.2, 1.5, Math.PI, 0, true); ho.lineTo(1.5, 0); ho.lineTo(-1.5, 0); ar.holes.push(ho);
@@ -2215,7 +2269,7 @@ const BUILDERS = {
     st.open = 0;
     st.onReset = () => { st.open = 0; };
     st.onSolvedQuiet = () => { st.open = 1; };
-    st.onSolve = () => { synth.play('fanfare', 0.8); synth.play('cheer', 0.8, 1, st.L(0, 1.5, -2)); setTimeout(() => synth.play('creak', 1, 0.6, st.L(0, 1.5, -3.2)), 400); for (let k = 0; k < 4; k++) setTimeout(() => sparkBurst(st.L(rnd(-1, 1), 2, -3), 20, [0xffe08a, 0xff6a5a, 0x8ad0ff][k % 3]), k * 300); };
+    st.onSolve = () => { if (synth.ctx) { const t0 = synth.ctx.currentTime + 0.1; [440, 493.88, 523.25, 587.33, 659.25, 880].forEach((f, k) => pianoNote(f, t0 + k * 0.16, 0.45, st.L(0, 1, -0.6))); } synth.play('cheer', 0.8, 1, st.L(0, 1.5, -2)); setTimeout(() => synth.play('creak', 1, 0.6, st.L(0, 1.5, -3.2)), 400); for (let k = 0; k < 4; k++) setTimeout(() => sparkBurst(st.L(rnd(-1, 1), 2, -3), 20, [0xffe08a, 0xff6a5a, 0x8ad0ff][k % 3]), k * 300); };
     st.fx = (dt, t) => {
       const hf = st.cfg.hold ? st.holdT / st.cfg.hold : 0; st.gears.forEach(g => { g.m.rotation.z += g.sp * (0.3 + hf * 9 + (st.solved ? 4 : 0)) * dt; });
       if (st.solved) st.open = Math.min(1, st.open + dt * 0.35); const o = smooth(st.open);
@@ -2223,6 +2277,11 @@ const BUILDERS = {
     };
   }
 };
+function putOnPlate(st, p, sl) {
+  if (p.holder) { p.holder.held = null; p.holder = null; } if (p.state === 'socket' && p.socketOwner && p.socketOwner !== sl) p.socketOwner.detach(p);
+  sl.item = p; p.socketOwner = sl; p.state = 'socket'; const b = p.body; b.type = CANNON.Body.KINEMATIC; b.collisionResponse = false; b.velocity.setZero(); b.angularVelocity.setZero();
+  const q = st.frame.getWorldQuaternion(new Q()); b.quaternion.set(q.x, q.y, q.z, q.w);
+}
 function makeCookie(pos, area, hidden = false) {
   const m = new THREE.Group(); const disc = addMesh(m, new THREE.CylinderGeometry(0.045, 0.045, 0.014, 28), [MAT.gingerbread, MAT.cookie, MAT.cookie]); disc.material = [MAT.gingerbread, MAT.cookie, MAT.cookie];
   const bites = []; for (let k = 0; k < 3; k++) { const b = addMesh(m, new THREE.CylinderGeometry(0.022, 0.022, 0.02, 14), std(0x2a1a14, 1), 0.04 * Math.cos(k * 0.9), 0, 0.04 * Math.sin(k * 0.9)); b.visible = false; bites.push(b); }
@@ -2282,12 +2341,7 @@ let santa = null; const elves = [];
 function buildCharacters() {
   santa = new Character('santa');
   ELF_NAMES.forEach((n, k) => elves.push(new Character('elf', { name: n, look: k, scale: 0.95 + (k % 3) * 0.05, pitch: 0.85 + (k % 4) * 0.12 })));
-  initHud();
-  for (const c of [santa, ...elves]) { const m = c.bubble.sprite.material; m.map = talkIcon(c.color); m.depthTest = true; m.needsUpdate = true; c.bubble.sprite.scale.set(0.16, 0.12, 1); c.bubble.set = () => {}; }
 }
-{ const say0 = Character.prototype.say, hush0 = Character.prototype.hush;
-  Character.prototype.say = function (text, dur) { say0.call(this, text, dur); hudShow(this, text); };
-  Character.prototype.hush = function () { hush0.call(this); hudHide(this); }; }
 function buildProps() {
   // salotto: biscotti e latte
   for (let k = 0; k < 5; k++) { const a = k / 5 * TAU; makeCookie(new V3(1.15 + Math.cos(a) * 0.1, 0.56, 1.95 + Math.sin(a) * 0.1), 'house'); }
@@ -2463,13 +2517,30 @@ function updateHud(dt, head) {
 // fumetto piccolo sopra la testa (solo per capire chi parla)
 function talkIcon(color) { return canvasTex(160, 120, (g, w, h) => { g.fillStyle = '#fffaf0'; g.strokeStyle = color; g.lineWidth = 8; roundRect(g, 8, 8, w - 16, h - 40, 30); g.fill(); g.stroke(); g.beginPath(); g.moveTo(w / 2 - 14, h - 34); g.lineTo(w / 2, h - 8); g.lineTo(w / 2 + 14, h - 34); g.fill(); g.fillStyle = color; for (let k = -1; k <= 1; k++) { g.beginPath(); g.arc(w / 2 + k * 32, (h - 32) / 2 + 4, 9, 0, TAU); g.fill(); } }); }
 // voce "borbottata": sillabe con formanti delle vocali, voce grave per Babbo Natale e acuta per gli elfi
-voice.blip = function (ch) {
+voice.blipOld = function (ch) {
   if (!synth.ctx || !synth.enabled) return; const ctx = synth.ctx, t = ctx.currentTime, big = ch.kind === 'santa';
   const f0 = (big ? 105 : 250 * (ch.pitch || 1)) * rnd(0.86, 1.2), V = [[730, 1090], [530, 1840], [300, 2250], [570, 840], [320, 900]][(Math.random() * 5) | 0], dur = big ? rnd(0.1, 0.16) : rnd(0.06, 0.1);
   const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * rnd(0.88, 1.12), t + dur);
   const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(big ? 0.55 : 0.45, t + 0.014); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   V.forEach((f, k) => { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * (big ? 0.82 : 1.18); bp.Q.value = k ? 8 : 5; const gk = ctx.createGain(); gk.gain.value = k ? 1.6 : 2.6; o.connect(bp); bp.connect(gk); gk.connect(g); });
   ch.headWorld(_v1); const p = synth.panner(_v1, 1.8); g.connect(p); p.connect(synth.master); o.start(t); o.stop(t + dur + 0.03);
+};
+const PENTA = [0, 2, 4, 7, 9, 12, 14];
+voice.blip = function (ch) {
+  if (!synth.ctx || !synth.enabled) return; const ctx = synth.ctx, t = ctx.currentTime, big = ch.kind === 'santa';
+  ch.headWorld(_v1); const out = ctx.createGain(); out.gain.value = 1; const p = synth.panner(_v1, 2.0); out.connect(p); p.connect(synth.master);
+  if (big) {
+    // "ho" caldo: sinusoide grave + ottava morbida, attacco dolce, leggero vibrato
+    const f = 98 * Math.pow(2, PENTA[(Math.random() * 4) | 0] / 12), dur = 0.2, o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    o.type = 'sine'; o2.type = 'triangle'; o.frequency.value = f; o2.frequency.value = f * 2; lfo.frequency.value = 6; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
+    const g2 = ctx.createGain(); g2.gain.value = 0.25; o2.connect(g2); g2.connect(g); o.connect(g);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.32, t + 0.035); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); g.connect(out);
+    for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + dur + 0.03); }
+  } else {
+    // campanellino: nota della scala pentatonica, timbro di celesta (fondamentale + armonica 4 smorzata)
+    const f = 784 * (ch.pitch || 1) * Math.pow(2, PENTA[(Math.random() * PENTA.length) | 0] / 12) / 1.2, dur = 0.16;
+    for (const [h, a, d] of [[1, 0.14, dur], [4, 0.035, dur * 0.4]]) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * h; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(a, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g); g.connect(out); o.start(t); o.stop(t + d + 0.02); }
+  }
 };
 // biscotti sgranocchiati da Babbo Natale e dagli elfi
 const eaters = [];
@@ -2488,7 +2559,7 @@ function updateEaters(dt, t) {
 function helpStation() {
   const st = game.stIdx >= 0 ? stations[game.stIdx] : null; if (!st || st.solved || game.phase !== 'play') return;
   game.playT = 0; const e = elves[st.idx]; if (e) { e.say('Ti do una mano: guarda la tabella di verità, la riga con Y = 1!', 5); e.setMode('wave', 2); }
-  if (st.cfg.plug) { const P = st.panel; if (P.plugged) P.detach(P.plug); const ok = P.sockets.find(q => { st.root.chipType = q.type; const r = st.checkTarget(); st.root.chipType = null; return r; }); if (ok) P.insert(P.plug, ok); return; }
+  if (st.cfg.plug) { const P = st.panel; if (P.plugged && !P.locked) P.detach(P.plug); const ok = P.sockets.find(q => { st.root.chipType = q.type; const r = st.checkTarget(); st.root.chipType = null; return r; }); if (ok && !P.locked) P.insert(P.plug, ok); st.names.forEach(n => { st.inputs[n].value = true; }); st.devs.forEach(d => d.sync && d.sync()); return; }
   const row = st.truthRows().find(r => r.y); if (!row) return;
   st.names.forEach((n, j) => { st.inputs[n].value = !!row.bits[j]; }); st.devs.forEach(d => d.sync && d.sync());
   if (st.door) { st.door.animateTo(st.inputs.A.value ? st.door.maxA : 0); }
@@ -2561,7 +2632,7 @@ function hapticPulse(i, intensity = 0.6, ms = 40) { if (i === undefined || i < 0
 function rayHit(origin, dir, far = 10) { raycaster.ray.origin.copy(origin); raycaster.ray.direction.copy(dir); raycaster.far = far; const hits = raycaster.intersectObjects(rayTargets, true); for (const h of hits) { const t = findTarget(h.object); if (t && (t === floorTarget ? isVisibleChain(h.object.parent) : isVisibleChain(h.object))) return h; } return null; }
 function rayFromController(ctrl) { tmpMat.identity().extractRotation(ctrl.matrixWorld); return rayHit(_v1.setFromMatrixPosition(ctrl.matrixWorld), _v2.set(0, 0, -1).applyMatrix4(tmpMat), 10); }
 function grabDistance(t, p) { return t.distTo ? t.distTo(p) : t.grabDist(p); }
-function findGrabTarget(p) { let best = null, bd = 0.08; for (const t of grabbables) { if (t.grabbable && !t.grabbable()) continue; if (t.group && !isVisibleChain(t.group)) continue; const d = grabDistance(t, p); if (d < bd) { bd = d; best = t; } } return best; }
+function findGrabTarget(p) { let best = null, bd = 0.05; for (const t of grabbables) { if (t.grabbable && !t.grabbable()) continue; if (t.group && !isVisibleChain(t.group)) continue; const d = grabDistance(t, p); if (d < bd) { bd = d; best = t; } } return best; }
 function headPos(out) { return camera.getWorldPosition(out); }
 function navLocal(a, x, z) { if (!a.obb) return [x, z, (a.x0 + a.x1) / 2, (a.z0 + a.z1) / 2, (a.x1 - a.x0) / 2, (a.z1 - a.z0) / 2]; const dx = x - a.cx, dz = z - a.cz, c = Math.cos(a.yaw), s = Math.sin(a.yaw); return [dx * c - dz * s, dx * s + dz * c, 0, 0, a.hx, a.hz]; }
 function validSpot(x, z, m = 0.2) { const B = WALK[game.area]; if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return false; for (const a of NAV[game.area]) { const [lx, lz, cx, cz, hx, hz] = navLocal(a, x, z); if (Math.abs(lx - cx) < hx + m && Math.abs(lz - cz) < hz + m) return false; } return true; }
@@ -2772,7 +2843,7 @@ renderer.setAnimationLoop(() => {
     if (game.phase === 'play' && !cur.solved) {
       const C = cur.cfg;
       if (C.hold) { if (cur.output.value) { cur.holdT += dt; cur.msg = ['Tieni il segnale…', CSS_WAIT]; if (cur.holdT >= C.hold) { cur.holdT = C.hold; stationSolved(cur); } } else { if (cur.holdT > 0.3) { synth.play('error', 0.5); cur.msg = ['✗ Segnale interrotto! Riprova', CSS_FALSE]; } cur.holdT = 0; } }
-      else if (C.plug) { if (cur.panel.locked) stationSolved(cur); }
+      else if (C.plug) { if (cur.panel.locked && cur.inputs.A.value && cur.inputs.B.value) { cur.quickT += dt; if (cur.quickT > 0.6) stationSolved(cur); } else cur.quickT = 0; }
       else { if (cur.output.value) { cur.quickT += dt; if (cur.quickT > 0.35) stationSolved(cur); } else cur.quickT = 0; }
     }
     board.update(cur, game);
@@ -2785,7 +2856,7 @@ renderer.setAnimationLoop(() => {
   });
   safe('chars', () => {
   if (santa.root.visible) santa.update(dt, t, headPosV); for (const e of elves) if (e.root.visible) e.update(dt, t, headPosV);
-  updateEaters(dt, t); updateHud(dt, headPosV);
+  updateEaters(dt, t);
   });
   safe('buttons', () => {
   const talking = !!game.cur && (Array.isArray(game.cur) || game.cur.skippable);
