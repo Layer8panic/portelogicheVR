@@ -392,13 +392,13 @@ const SCRIPT = {
       win: [[3, 'I pacchetti viaggiano e si incartano da soli! Che meraviglia!'], [7, 'La XOR è come l\'interruttore delle scale di casa tua.'], [8, 'Io mi sono incartato un piede. Qualcuno mi aiuta?']] },
     { intro: [[4, 'Brrr! Il cannone spara neve solo se NESSUNO sportello è aperto.'], [4, 'È una NOR, cioè NOT OR: dà 1 solo se tutti gli ingressi sono 0. Abbassa le leve di zucchero!']],
       win: [[4, 'Nevica sul villaggio in miniatura! Guarda che bello!'], [7, 'Lo sapevi? NOT(A OR B) è uguale a (NOT A) AND (NOT B): la legge di De Morgan!'], [8, 'Ho preso una palla di neve in faccia. È stato bellissimo.']] },
-    { intro: [[5, 'Questa bilancia controlla che i pacchi siano uguali. Ma il cavo si è staccato!'], [5, 'Afferra lo spinotto e collegalo alla porta giusta: Y deve valere 1 solo quando A e B sono UGUALI.']],
+    { intro: [[5, 'Questa bilancia controlla che i due pacchi siano uguali. Ma il cavo si è staccato!'], [5, 'Vedi il pannello di legno con 5 prese? Ognuna è una porta logica diversa: AND, OR, XOR, XNOR, NAND.'], [5, 'Prendi lo SPINOTTO ROSSO che brilla sul banco e infilalo in una presa. Se è quella sbagliata salta fuori: riprova!'], [5, 'Indizio: Y deve fare 1 quando A e B sono UGUALI, cioè 0-0 oppure 1-1. Guarda la tabella sulla lavagna!']],
       win: [[5, 'Perfettamente in equilibrio! Era una XNOR, il comparatore!'], [8, 'Io peso esattamente… un elfo e mezzo.'], [7, 'Ultima macchina: il portone del magazzino. Tastino lo apre col pianoforte!']] },
     { intro: [[6, 'Il portone si apre suonando la combinazione giusta sui tasti A, B, C e D.'], [6, 'Ricorda: A e B diversi, almeno uno tra C e D, ma MAI A e D insieme. Poi tieni Y a 1 per 2 secondi!']],
       win: [[6, 'Si apre! Il magazzino è pieno di regali!'], ['S', 'Oh oh oh! Ce l\'avete fatta! Avete salvato il Natale!', 'wave'], ['S', 'Quella era una NAND, la porta universale: con le NAND si può costruire qualsiasi circuito.'], ['S', 'Venite in salotto: vi ho preparato latte e biscotti!']] }
   ],
   living: [['S', 'Ecco qua: latte caldo e i famosi biscotti di Zenzero. Prendine uno e avvicinalo alla bocca!']],
-  livingAte: [['S', 'Buoni, vero? Il segreto è un pizzico di cannella… e tanta logica!', 'talk'], [7, 'Babbo Natale, la slitta è carica! Le renne scalpitano!'], ['S', 'Allora è ora di partire. Vieni a salutarmi fuori!', 'wave']],
+  livingAte: [['S', 'Buoni, vero? Il segreto è un pizzico di cannella… e tanta logica!', 'talk'], [7, 'Gnam gnam! Croccantissimi!'], [8, 'Shh… io ne ho già mangiati quattro. Non ditelo a nessuno!'], [0, 'Li ho sfornati io col forno che hai riparato!'], [7, 'Babbo Natale, la slitta è carica! Le renne scalpitano!'], ['S', 'Allora è ora di partire. Vieni a salutarmi fuori!', 'wave']],
   yard: [[8, 'Le renne sono pronte! Stella, con la sua lanterna, fa luce davanti a tutte.'], ['S', 'Grazie di cuore, piccolo inventore. Senza di te, niente Natale!'], ['board'], ['S', 'Oh oh oh! Buon Natale a tutti!', 'wave'], ['fly'], [7, 'Guarda! Vola tra le stelle!', 'cheer'], [8, 'Ciao Babbo! Portami un cappello nuovo!', 'cheer'], ['end']]
 };
 
@@ -806,6 +806,7 @@ class Character {
     } else if (m === 'cheer') { const b = Math.abs(Math.sin(T * 6)); Object.assign(target, { y: b * 0.12 * s, sLz: 2.7, sRz: -2.7, eL: -0.3 + 0.3 * Math.sin(T * 12), eR: -0.3 + 0.3 * Math.cos(T * 12), kL: b * 0.4, kR: b * 0.4, mouth: 0.6 }); }
     else if (m === 'wave') { Object.assign(target, { sRz: -2.5, sRx: -0.2, eR: -0.5 + 0.45 * Math.sin(T * 9), sway: 0.06 * Math.sin(T * 4.5) }); }
     else if (m === 'work') { Object.assign(target, { sRx: -1.0 - 0.6 * Math.max(0, Math.sin(T * 6)), eR: -0.9, lean: 0.12, sLx: -0.6, eL: -1.0 }); }
+    else if (m === 'eat') { const k = this.eatK || 0; Object.assign(target, { sRx: -0.35 - 1.0 * k, eR: -0.5 - 1.5 * k, sRz: -0.13 + 0.45 * k, hp: 0.12 * k }); }
     else if (m === 'sit') { Object.assign(target, { lLx: -1.45, lRx: -1.45, kL: 1.45, kR: 1.45, y: -this.hipY * 0.42, sLx: -0.4, sRx: -0.4, eL: -0.6, eR: -0.6 }); }
     if (this.talking > 0) { this.talking -= dt; target.mouth = Math.max(target.mouth, 0.35 + 0.65 * Math.abs(Math.sin(T * 17))); if (m === 'idle' || m === 'talk') { target.sRx = -0.55 + 0.3 * Math.sin(T * 2.3); target.eR = -0.9 + 0.3 * Math.sin(T * 3.1); target.hp += 0.05 * Math.sin(T * 5); }
       this.blipT -= dt; if (this.useBlips && this.blipT <= 0 && this.talking > 0.25) { this.blipT = this.kind === 'santa' ? 0.13 : 0.085; voice.blip(this); }
@@ -830,7 +831,7 @@ class Character {
     this.blink = Math.max(0, this.blink - dt * 7); const lidA = lerp(this.lidOpen, this.lidClosed, this.blink > 0.5 ? (1 - this.blink) * 2 : this.blink * 2);
     for (const l of this.lids) l.rotation.x = lidA;
     // fumetto sopra la testa
-    if (this.bubble.sprite.visible) { this.headWorld(this.bubble.sprite.position); this.bubble.sprite.position.y += 0.32; }
+    if (this.bubble.sprite.visible) { this.headWorld(this.bubble.sprite.position); this.bubble.sprite.position.y += 0.13 + 0.015 * Math.sin(T * 6); }
   }
 }
 function buildSanta(c) {
@@ -979,46 +980,79 @@ function antlerPair(scale) {
   }
   g.scale.setScalar(scale); return g;
 }
+// renna procedurale con scheletro vero: zampe a due segmenti, collo, testa, orecchie, coda.
+// Galoppo "rotatorio" come quello reale (le quattro zampe sfasate), bob del corpo e cenni della testa.
 class Reindeer {
   constructor(proto, opts = {}) {
-    this.group = new THREE.Group(); this.lead = !!opts.lead; this.phase = Math.random() * 3; this.speed = 0;
-    const furMat = new THREE.MeshStandardMaterial({ color: opts.lead ? 0x9a6440 : 0x7e5236, roughness: 0.85 });
-    if (proto) {
-      this.proto = proto; const mesh = this.mesh = new THREE.Mesh(proto.geo, furMat); mesh.name = proto.name;
-      mesh.scale.setScalar(proto.scale); mesh.rotation.y = proto.yawFix; mesh.position.copy(proto.offset); this.group.add(mesh);
-      this.mixer = new THREE.AnimationMixer(mesh); this.action = this.mixer.clipAction(proto.clip, mesh); this.action.play(); this.action.time = 0.15 + Math.random() * 0.2; this.action.timeScale = 0;
-    } else this.buildFallback(furMat);
-    this.antlers = antlerPair(0.85); this.group.add(this.antlers);
-    // finimenti rossi con campanelli d'oro
-    const H = this.h = proto ? proto.height : 1.25;
-    addMesh(this.group, new THREE.TorusGeometry(H * 0.2, 0.025, 8, 32), MAT.red, 0, H * 0.62, -0.05, 0, 0, 0, 1, 1.2, 1);
-    for (let k = 0; k < 5; k++) { const a = -0.9 + k * 0.45; addMesh(this.group, new THREE.SphereGeometry(0.03, 10, 8), MAT.gold, Math.sin(a) * H * 0.21, H * 0.62 - Math.cos(a) * H * 0.24, -0.05); }
-    if (this.lead) {
-      // la renna capofila porta una lanterna a stella dorata
-      this.star = addMesh(this.group, starGeo(0.1, 0.03), glowMat(0xffd34d, 3), 0, H * 0.72, H * 0.42);
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.sparkle, color: 0xffe08a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(0.7, 0.7, 1); halo.position.copy(this.star.position); this.group.add(halo); this.halo = halo;
+    this.group = new THREE.Group(); this.lead = !!opts.lead; this.phase = Math.random() * TAU; this.speed = 0; this.gait = 0; this.idleT = rnd(2, 6); this.look = 0; this.lookT = 0;
+    const FUR = std(this.lead ? 0x9a6440 : 0x8a5634, 0.85), DARK = std(0x5a3622, 0.85), CREAM = std(0xeadbc0, 0.95), HOOF = std(0x231711, 0.5);
+    const B = this.body = new THREE.Group(); B.position.y = 0.92; this.group.add(B);
+    addMesh(B, new THREE.SphereGeometry(0.27, 28, 20), FUR, 0, 0, 0, 0, 0, 0, 0.9, 0.95, 1.9);
+    addMesh(B, new THREE.SphereGeometry(0.25, 24, 18), FUR, 0, 0.02, 0.3, 0, 0, 0, 0.95, 1.05, 1.0);
+    addMesh(B, new THREE.SphereGeometry(0.24, 24, 18), FUR, 0, 0.03, -0.32, 0, 0, 0, 0.95, 1.0, 1.0);
+    addMesh(B, new THREE.SphereGeometry(0.2, 20, 14), CREAM, 0, -0.12, 0.05, 0, 0, 0, 0.85, 0.6, 1.7);
+    addMesh(B, fluffy(0.16, 0.12, 5, 24, 18, 7), CREAM, 0, 0.02, 0.5, 0, 0, 0, 1, 1.1, 0.8);
+    this.tail = new THREE.Group(); this.tail.position.set(0, 0.12, -0.55); B.add(this.tail); addMesh(this.tail, fluffy(0.07, 0.15, 5, 16, 12, 3), CREAM, 0, -0.03, -0.02, 0, 0, 0, 0.9, 1.2, 0.8);
+    // collo e testa
+    this.neck = new THREE.Group(); this.neck.position.set(0, 0.12, 0.42); B.add(this.neck);
+    addMesh(this.neck, taperTube([new V3(0, 0, 0), new V3(0, 0.16, 0.08), new V3(0, 0.33, 0.16)], 0.13, 0.08, 16, 14), FUR);
+    addMesh(this.neck, fluffy(0.1, 0.12, 5, 20, 14, 2), CREAM, 0, 0.08, 0.13, 0, 0, 0, 0.9, 1.3, 0.7);
+    const H = this.head = new THREE.Group(); H.position.set(0, 0.36, 0.17); this.neck.add(H);
+    addMesh(H, new THREE.SphereGeometry(0.11, 24, 18), FUR, 0, 0, 0, 0, 0, 0, 0.95, 0.95, 1.1);
+    addMesh(H, new THREE.CapsuleGeometry(0.065, 0.12, 8, 16), FUR, 0, -0.04, 0.13, Math.PI / 2 - 0.35);
+    addMesh(H, new THREE.SphereGeometry(0.06, 16, 12), CREAM, 0, -0.07, 0.17, 0, 0, 0, 1, 0.7, 1.1);
+    this.nose = addMesh(H, new THREE.SphereGeometry(0.036, 16, 12), this.lead ? glowMat(0xffd34d, 1.6) : std(0x2a1812, 0.3), 0, -0.04, 0.235);
+    for (const sx of [-1, 1]) {
+      const lid = makeEye(H, sx * 0.065, 0.03, 0.075, 0.026, 0x3a2414, FUR); lid.rotation.x = -0.75; (this.lids || (this.lids = [])).push(lid);
+      const ear = new THREE.Group(); ear.position.set(sx * 0.085, 0.07, -0.02); ear.rotation.z = sx * -1.0; H.add(ear); addMesh(ear, new THREE.ConeGeometry(0.035, 0.12, 12), FUR, 0, 0.06, 0, 0, 0, 0, 1, 1, 0.45); addMesh(ear, new THREE.ConeGeometry(0.022, 0.08, 10), CREAM, 0, 0.05, 0.008, 0, 0, 0, 1, 1, 0.3);
+      (this.ears || (this.ears = [])).push(ear);
     }
+    this.antlers = antlerPair(0.8); this.antlers.position.set(0, 0.08, -0.03); H.add(this.antlers);
+    // zampe: anca/spalla → ginocchio → zoccolo
+    this.legs = [];
+    for (const [x, z, front] of [[0.12, 0.36, 1], [-0.12, 0.36, 1], [0.12, -0.36, 0], [-0.12, -0.36, 0]]) {
+      const hip = new THREE.Group(); hip.position.set(x, -0.04, z); B.add(hip);
+      addMesh(hip, taperTube([new V3(0, 0.05, 0), new V3(0, -0.2, front ? 0.01 : -0.03), new V3(0, -0.42, 0)], front ? 0.075 : 0.09, 0.045, 12, 10), FUR);
+      const knee = new THREE.Group(); knee.position.y = -0.42; hip.add(knee);
+      addMesh(knee, taperTube([new V3(0, 0, 0), new V3(0, -0.2, 0), new V3(0, -0.4, 0)], 0.04, 0.032, 10, 8), DARK);
+      addMesh(knee, fluffyTorus(0.04, 0.016, 0.3, 8, 24, 6), CREAM, 0, -0.36, 0, Math.PI / 2);
+      addMesh(knee, new THREE.CylinderGeometry(0.036, 0.045, 0.06, 14), HOOF, 0, -0.43, 0.01);
+      this.legs.push({ hip, knee, front, x });
+    }
+    // finimenti rossi con campanelli d'oro
+    addMesh(B, new THREE.TorusGeometry(0.3, 0.028, 10, 40), MAT.red, 0, 0, 0.2, 0, 0, 0, 0.95, 1.0, 1);
+    for (let k = 0; k < 7; k++) { const a = -1.3 + k * 0.43; addMesh(B, new THREE.SphereGeometry(0.03, 12, 8), MAT.gold, Math.sin(a) * 0.29, -Math.cos(a) * 0.3, 0.22); }
+    addMesh(B, rbox(0.3, 0.04, 0.5, 0.02), MAT.red, 0, 0.27, 0.05); addMesh(B, rbox(0.12, 0.05, 0.12, 0.02), MAT.gold, 0, 0.29, 0.05);
+    if (this.lead) {
+      // Stella, la capofila, porta una lanterna a stella dorata appesa al petto
+      this.star = addMesh(B, starGeo(0.09, 0.028), glowMat(0xffd34d, 3), 0, -0.12, 0.6);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.sparkle, color: 0xffe08a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(0.7, 0.7, 1); halo.position.copy(this.star.position); B.add(halo); this.halo = halo;
+    }
+    bakeNode(B); bakeNode(this.neck); bakeNode(H); this.legs.forEach(l => { bakeNode(l.hip); bakeNode(l.knee); });
   }
-  buildFallback(m) {
-    const g = new THREE.Group(); this.group.add(g); this.fb = g; this.legs = [];
-    addMesh(g, new THREE.CapsuleGeometry(0.22, 0.6, 8, 16), m, 0, 0.85, 0, Math.PI / 2);
-    addMesh(g, new THREE.CapsuleGeometry(0.1, 0.35, 6, 12), m, 0, 1.15, 0.45, -0.7);
-    this.fbHead = addMesh(g, new THREE.SphereGeometry(0.13, 16, 12), m, 0, 1.38, 0.62, 0, 0, 0, 0.9, 0.9, 1.4);
-    addMesh(g, new THREE.SphereGeometry(0.04, 10, 8), std(0x2a1a14, 0.4), 0, 1.33, 0.82);
-    for (const [x, z] of [[0.13, 0.32], [-0.13, 0.32], [0.13, -0.32], [-0.13, -0.32]]) { const lg = new THREE.Group(); lg.position.set(x, 0.75, z); g.add(lg); addMesh(lg, new THREE.CapsuleGeometry(0.045, 0.6, 4, 8), m, 0, -0.38, 0); this.legs.push(lg); }
-  }
-  headPos(out) {
-    if (!this.proto) return out.set(0, 1.45, 0.66);
-    const geo = this.proto.geo, i = this.proto.headIdx, base = geo.attributes.position, morphs = geo.morphAttributes.position, inf = this.mesh.morphTargetInfluences;
-    out.fromBufferAttribute(base, i); if (morphs && inf) for (let k = 0; k < morphs.length; k++) if (inf[k]) { out.x += morphs[k].getX(i) * inf[k]; out.y += morphs[k].getY(i) * inf[k]; out.z += morphs[k].getZ(i) * inf[k]; }
-    this.mesh.updateMatrix(); return out.applyMatrix4(this.mesh.matrix);
-  }
+  headPos(out) { return this.head.getWorldPosition(out); }
   update(dt, t, speed) {
-    this.speed = speed;
-    if (this.mixer) { this.action.timeScale = speed > 0.05 ? 0.8 + speed * 0.12 : 0; this.mixer.update(dt); }
-    else for (let k = 0; k < 4; k++) this.legs[k].rotation.x = speed > 0.05 ? Math.sin(t * 12 + k * 1.6) * 0.6 : 0;
-    this.headPos(_v1); this.antlers.position.set(_v1.x, _v1.y - 0.06, _v1.z - 0.08);
-    if (this.halo) { const p = 0.85 + 0.15 * Math.sin(t * 5); this.halo.scale.set(0.7 * p, 0.7 * p, 1); this.star.rotation.y += dt; }
+    this.speed = speed; const run = clamp(speed / 3, 0, 1); this.gait += (run - this.gait) * Math.min(1, dt * 3); const g = this.gait;
+    const flying = speed > 0.05 && this.group.parent && this.group.parent.position.y > 0.8;
+    this.phase += dt * (g > 0.02 ? 9.5 : 0); const p = this.phase;
+    // galoppo: sfasamenti tipici (anteriori vicini, posteriori in opposizione)
+    const off = [0, 0.35, Math.PI, Math.PI + 0.35], amp = flying ? 0.45 : 0.75;
+    this.legs.forEach((l, k) => {
+      const ph = p + off[k], sw = Math.sin(ph);
+      const hipA = g * amp * sw + (flying ? (l.front ? -0.5 : 0.55) * g : 0), kneeA = g * (l.front ? 1 : -1) * Math.max(0, Math.cos(ph)) * 1.1;
+      l.hip.rotation.x = -hipA; l.knee.rotation.x = l.front ? kneeA : kneeA;
+    });
+    const bob = g * Math.abs(Math.sin(p)) * 0.06; this.body.position.y = 0.92 + bob; this.body.rotation.x = g * 0.06 * Math.sin(p * 2);
+    // a riposo: respiro, orecchie, coda, testa che si guarda intorno
+    this.idleT -= dt; if (this.idleT <= 0) { this.idleT = rnd(2.5, 6); this.lookT = rnd(-0.6, 0.6); }
+    this.look += (this.lookT * (1 - g) - this.look) * Math.min(1, dt * 2);
+    this.neck.rotation.x = -0.1 + g * 0.25 * Math.sin(p * 2 + 0.5) + (1 - g) * 0.04 * Math.sin(t * 1.3 + this.phase);
+    this.neck.rotation.y = this.look; this.head.rotation.x = 0.25 - g * 0.15;
+    this.ears.forEach((e, k) => { e.rotation.x = 0.15 * Math.sin(t * (k ? 3.1 : 2.3) + this.phase) * Math.max(0, Math.sin(t * 0.7 + k)); });
+    this.tail.rotation.x = -0.4 + 0.25 * Math.sin(t * 6 + this.phase) * (0.3 + g);
+    this.body.scale.y = 1 + 0.012 * Math.sin(t * 2.2 + this.phase) * (1 - g);
+    this.blinkT = (this.blinkT || rnd(2, 5)) - dt; if (this.blinkT <= 0) { this.blinkT = rnd(2.5, 6); this.blink = 1; } this.blink = Math.max(0, (this.blink || 0) - dt * 7); const lidA = lerp(-0.75, 1.55, this.blink > 0.5 ? (1 - this.blink) * 2 : this.blink * 2); this.lids.forEach(l => { l.rotation.x = lidA; });
+    if (this.halo) { const q = 0.85 + 0.15 * Math.sin(t * 5); this.halo.scale.set(0.7 * q, 0.7 * q, 1); this.star.rotation.z += dt; }
   }
 }
 function prepareHorse(gltf) {
@@ -1386,7 +1420,7 @@ class Device {
 // rubinetto a ruota: si gira con la mano (o con un dito, come una manovella)
 class ValveInput extends Device {
   constructor(frame, pos, node, desc, color = 0xc8202c) {
-    super(frame, pos, node); this.maxA = Math.PI * 1.5; this.angle = node.value ? this.maxA : 0; this.vel = 0; this.auto = null; this.R = 0.11;
+    super(frame, pos, node); this.maxA = Math.PI; this.wasTouch = false; this.cool = 0; this.angle = node.value ? this.maxA : 0; this.vel = 0; this.auto = null; this.R = 0.11;
     const g = this.group;
     addMesh(g, new THREE.CylinderGeometry(0.035, 0.035, 0.12, 14), MAT.brass, 0, 0, -0.03, Math.PI / 2);
     this.wheel = new THREE.Group(); this.wheel.position.z = 0.05; g.add(this.wheel);
@@ -1400,20 +1434,22 @@ class ValveInput extends Device {
   grabCenter(out) { return this.wheel.localToWorld(out.set(0, 0, 0)); }
   grabDist(p) { this.local(p, _v4); return Math.max(0, Math.hypot(_v4.x, _v4.y) - this.R - 0.03) + Math.max(0, Math.abs(_v4.z - 0.05) - 0.05); }
   haloSize() { return 0.32; }
-  onGrab(I) { if (!this.active()) return false; this.holder = I; this.local(I.pos, _v4); this.phi = Math.atan2(_v4.y, _v4.x); this.auto = null; return true; }
+  onGrab(I) { if (!this.active()) return false; this.holder = I; this.local(I.pos, _v4); this.phi = Math.atan2(_v4.y, _v4.x); this.auto = null; this.a0 = this.angle; return true; }
   onHold(I, dt) {
     if (this.holder !== I) return; this.local(I.pos, _v4); const phi = Math.atan2(_v4.y, _v4.x); let d = phi - this.phi; d = Math.atan2(Math.sin(d), Math.cos(d)); this.phi = phi;
-    if (Math.hypot(_v4.x, _v4.y) > 0.03) { const prev = this.angle; this.angle = clamp(this.angle + d, 0, this.maxA); this.vel = (this.angle - prev) / Math.max(dt, 1e-3); }
+    if (Math.hypot(_v4.x, _v4.y) > 0.02) { const prev = this.angle; this.angle = clamp(this.angle + d * 1.6, 0, this.maxA); this.vel = (this.angle - prev) / Math.max(dt, 1e-3); }
     if (Math.hypot(_v4.x, _v4.y, _v4.z) > 0.4) { this.onRelease(I); I.held = null; }
   }
-  onRelease(I) { if (this.holder === I) this.holder = null; }
-  click() { this.auto = this.node.value ? 0 : this.maxA; synth.play('squeak', 0.6, 1, this.group.getWorldPosition(new V3())); }
+  onRelease(I) { if (this.holder !== I) return; this.holder = null; const from = this.a0 > this.maxA / 2 ? this.maxA : 0, moved = Math.abs(this.angle - from) > this.maxA * 0.2; this.auto = moved ? this.maxA - from : from; this.vel = 0; }
+  click() { if (this.cool > 0) return; this.cool = 0.6; this.auto = this.node.value ? 0 : this.maxA; synth.play('squeak', 0.6, 1, this.group.getWorldPosition(new V3())); }
   touch(touches) {
-    if (this.holder || !this.active()) return;
-    for (const t of touches) { this.local(t.pos, _v4); const r = Math.hypot(_v4.x, _v4.y); if (Math.abs(r - this.R) < 0.035 && Math.abs(_v4.z - 0.05) < 0.05 && r > 0.02) { this.localVel(t.vel, _v5); const vt = (-_v4.y * _v5.x + _v4.x * _v5.y) / r; if (Math.abs(vt) > 0.05) { this.vel = vt / this.R; this.auto = null; } } }
+    if (this.holder || !this.active()) return; let any = false;
+    for (const t of touches) { this.local(t.pos, _v4); if (Math.hypot(_v4.x, _v4.y) < this.R + 0.04 && Math.abs(_v4.z - 0.05) < 0.06) any = true; }
+    if (any && !this.wasTouch) this.click(); this.wasTouch = any;
   }
   update(dt) {
-    if (!this.holder) { if (this.auto !== null) { const d = this.auto - this.angle; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 6); if (Math.abs(d) < 0.01) this.auto = null; } else { this.angle = clamp(this.angle + this.vel * dt, 0, this.maxA); this.vel *= Math.exp(-4 * dt); } }
+    this.cool = Math.max(0, this.cool - dt);
+    if (!this.holder) { if (this.auto !== null) { const d = this.auto - this.angle; this.vel = Math.sign(d) * 6; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 6); if (Math.abs(d) < 0.01) { this.auto = null; this.vel = 0; synth.play('latch', 0.4, 1, this.group.getWorldPosition(_v4)); } } }
     if (Math.abs(this.vel) > 1.5) { this.sqT = (this.sqT || 0) - dt; if (this.sqT <= 0) { this.sqT = 0.35; synth.play('squeak', 0.35, rnd(0.9, 1.2), this.group.getWorldPosition(_v4)); } }
     this.wheel.rotation.z = this.angle; this.setValue(this.angle > this.maxA * 0.5); setLamp(this.lampM, this.node.value); this.lbl.update(this.node.value);
   }
@@ -1428,7 +1464,7 @@ class ButtonPair extends Device {
       const capMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.25, emissive: col, emissiveIntensity: 0.15 });
       const cap = addMesh(g, new THREE.SphereGeometry(0.05, 24, 14, 0, TAU, 0, Math.PI / 2), capMat, x, 0.055, 0); cap.userData.base = 0.055;
       const t = new TextSprite(txt, { size: 0.045, w: 96, h: 96, bg: null, color: '#ffffff' }); t.sprite.position.set(x, 0.14, 0); g.add(t.sprite);
-      const btn = { radius: 0.06, wasInside: false, cool: 0, center: new V3(), cap, v, getCenter: () => cap.localToWorld(btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || btn.cool > 0) return false; btn.cool = 0.3; cap.position.y = 0.035; synth.play('click', 0.8, v ? 1.2 : 0.9, btn.getCenter()); this.setValue(!!v); return true; }, click: () => btn.press() };
+      const btn = { radius: 0.072, wasInside: false, cool: 0, center: new V3(), cap, v, getCenter: () => cap.localToWorld(btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || btn.cool > 0) return false; btn.cool = 0.3; cap.position.y = 0.035; synth.play('click', 0.8, v ? 1.2 : 0.9, btn.getCenter()); this.setValue(!!v); return true; }, click: () => btn.press() };
       cap.userData.target = btn; rayTargets.push(cap); pokeables.push(btn); this.caps.push(btn);
     });
     this.lampM = lamp(g, 0, 0.05, -0.065, 0.022); this.lbl = inputLabel(g, node, desc, 0, 0.27, 0);
@@ -1451,13 +1487,13 @@ class KeySwitch extends Device {
   }
   roll(I) { if (I.isMouse) return -I.pos.x * 12; this.group.getWorldQuaternion(_q2); _q2.invert().multiply(I.quat); _v4.set(1, 0, 0).applyQuaternion(_q2); return Math.atan2(_v4.y, _v4.x); }
   grabCenter(out) { return this.key.localToWorld(out.set(0, 0, 0.065)); }
-  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.04; }
-  haloSize() { return 0.14; }
+  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.06; }
+  haloSize() { return 0.16; }
   onGrab(I) { if (!this.active()) return false; this.holder = I; this.r0 = this.roll(I); this.a0 = this.angle; this.auto = null; return true; }
-  onHold(I, dt) { if (this.holder !== I) return; let d = this.roll(I) - this.r0; d = Math.atan2(Math.sin(d), Math.cos(d)); this.angle = clamp(this.a0 - d, 0, Math.PI / 2); if (this.grabCenter(_v5).distanceTo(I.pos) > 0.3) { this.onRelease(I); I.held = null; } }
-  onRelease(I) { if (this.holder === I) { this.holder = null; this.auto = this.angle > Math.PI / 4 ? Math.PI / 2 : 0; } }
+  onHold(I, dt) { if (this.holder !== I) return; let d = this.roll(I) - this.r0; d = Math.atan2(Math.sin(d), Math.cos(d)); this.angle = clamp(this.a0 - d * 2, 0, Math.PI / 2); if (Math.abs(this.angle - this.a0) > 0.35) { this.auto = this.a0 > 0.7 ? 0 : Math.PI / 2; this.onRelease(I, true); I.held = null; return; } if (this.grabCenter(_v5).distanceTo(I.pos) > 0.3) { this.onRelease(I); I.held = null; } }
+  onRelease(I, keep) { if (this.holder === I) { this.holder = null; if (!keep) this.auto = this.angle > Math.PI / 4 ? Math.PI / 2 : 0; } }
   click() { this.auto = this.node.value ? 0 : Math.PI / 2; }
-  touch(touches) { if (this.holder || !this.active()) return; let any = false; const c = this.grabCenter(_v5); for (const t of touches) if (t.pos.distanceTo(c) < 0.045 + t.r) any = true; if (any && !this.wasTouch) this.click(); this.wasTouch = any; }
+  touch(touches) { if (this.holder || !this.active()) return; let any = false; const c = this.grabCenter(_v5); for (const t of touches) if (t.pos.distanceTo(c) < 0.065 + t.r) any = true; if (any && !this.wasTouch && !(this.auto !== null)) this.click(); this.wasTouch = any; }
   update(dt) {
     if (!this.holder && this.auto !== null) { const d = this.auto - this.angle; this.angle += Math.sign(d) * Math.min(Math.abs(d), dt * 7); if (Math.abs(d) < 0.01) { this.angle = this.auto; this.auto = null; synth.play('keyturn', 0.7, 1, this.group.getWorldPosition(_v4)); } }
     this.key.rotation.z = -this.angle; this.setValue(this.angle > Math.PI / 4); setLamp(this.lampM, this.node.value); this.lbl.update(this.node.value);
@@ -1478,21 +1514,16 @@ class CandyLever extends Device {
   }
   knobLocal(out) { return out.set(0, 0.035 + LR * Math.cos(this.theta), LR * Math.sin(this.theta)); }
   grabCenter(out) { return this.group.localToWorld(this.knobLocal(out)); }
-  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.036; }
-  haloSize() { return 0.11; }
+  grabDist(p) { return this.grabCenter(_v4).distanceTo(p) - 0.055; }
+  haloSize() { return 0.13; }
   onGrab(I) { if (!this.active()) return false; this.holder = I; return true; }
   onHold(I, dt) { if (this.holder !== I) return; this.local(I.pos, _v4); const dy = _v4.y - 0.035, dz = _v4.z; const tgt = clamp(Math.atan2(dz, Math.max(0.02, dy)), -LMAX, LMAX), prev = this.theta; this.theta += (tgt - this.theta) * Math.min(1, dt * 20); this.w = (this.theta - prev) / Math.max(dt, 1e-3); if (Math.hypot(_v4.x, dy, dz) > 0.45) { this.onRelease(I); I.held = null; } }
   onRelease(I) { if (this.holder === I) this.holder = null; }
   click() { this.w = this.theta > 0 ? -9 : 9; }
   touch(touches) {
-    if (this.holder || !this.active()) return; const k = this.knobLocal(_v5); let any = false;
-    for (const p of touches) {
-      this.local(p.pos, _v4); const d = _v4.distanceTo(k), R = 0.038 + p.r; if (d >= R) continue; any = true;
-      const tx = 0, ty = -Math.sin(this.theta), tz = Math.cos(this.theta); const side = Math.sign((k.y - _v4.y) * ty + (k.z - _v4.z) * tz) || 1;
-      this.theta += side * (R - d) / LR * 0.9; this.localVel(p.vel, _v3); const vt = _v3.y * ty + _v3.z * tz; if (side * vt > 0) this.w = side * Math.max(Math.abs(this.w), Math.abs(vt) / LR);
-      if (!this.wasTouch) { const sp = _v3.length(); if (sp > 0.15 && Math.abs(vt) < 0.35 * sp) this.click(); }
-    }
-    this.wasTouch = any;
+    if (this.holder || !this.active()) return; let any = false;
+    for (const p of touches) { this.local(p.pos, _v4); for (let k = 0; k <= 4; k++) { const r = LR * k / 4; if (_v4.distanceTo(_v5.set(0, 0.035 + r * Math.cos(this.theta), r * Math.sin(this.theta))) < (k === 4 ? 0.05 : 0.03) + p.r) any = true; } }
+    if (any && !this.wasTouch) this.click(); this.wasTouch = any;
   }
   update(dt) {
     if (!this.holder) { const s = Math.sign(this.theta) || 1; this.w += s * 30 * dt; this.w *= Math.exp(-3 * dt); this.theta += this.w * dt; }
@@ -1509,7 +1540,7 @@ class ToggleButton extends Device {
     this.capMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: COL_FALSE, emissiveIntensity: 1.3, toneMapped: false });
     this.cap = addMesh(g, new THREE.CylinderGeometry(0.07, 0.072, 0.05, 28), this.capMat, 0, 0.075, 0);
     this.lbl = inputLabel(g, node, desc, 0, 0.27, 0);
-    this.btn = { radius: 0.075, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.cap.localToWorld(this.btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; synth.play('click', 0.8, 1, this.btn.getCenter()); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
+    this.btn = { radius: 0.092, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.cap.localToWorld(this.btn.center.set(0, 0.03, 0)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; synth.play('click', 0.8, 1, this.btn.getCenter()); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
     this.cap.userData.target = this.btn; rayTargets.push(this.cap); pokeables.push(this.btn);
   }
   update(dt) { this.btn.cool = Math.max(0, this.btn.cool - dt); const ty = this.node.value ? 0.06 : 0.078; this.cap.position.y += (ty - this.cap.position.y) * Math.min(1, dt * 12); this.capMat.emissive.setHex(this.node.value ? COL_TRUE : COL_FALSE); this.lbl.update(this.node.value); }
@@ -1523,7 +1554,7 @@ class PianoKey extends Device {
     this.stripe = addMesh(this.pivot, rbox(0.15, 0.012, 0.06, 0.005), new THREE.MeshStandardMaterial({ color: 0x111111, emissive: COL_FALSE, emissiveIntensity: 1.4, toneMapped: false }), 0, 0.037, 0.42);
     const t = new TextSprite(node.id, { size: 0.07, w: 96, h: 96, bg: null, color: '#7a1218' }); t.sprite.position.set(0, 0.08, 0.3); this.pivot.add(t.sprite);
     this.lbl = inputLabel(g, node, desc, 0, 0.3, -0.05);
-    this.btn = { radius: 0.09, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.pivot.localToWorld(this.btn.center.set(0, 0.06, 0.38)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; this.play(); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
+    this.btn = { radius: 0.11, wasInside: false, cool: 0, center: new V3(), getCenter: () => this.pivot.localToWorld(this.btn.center.set(0, 0.06, 0.38)), press: () => { if (!this.active() || this.btn.cool > 0) return false; this.btn.cool = 0.35; this.play(); this.setValue(!this.node.value); return true; }, click: () => this.btn.press() };
     tagTargets(this.pivot, this.btn); pokeables.push(this.btn);
   }
   play() { if (!synth.ctx) return; const p = this.btn.getCenter(); music.ensure(); if (music.bus) music.box(this.freq, synth.ctx.currentTime + 0.01, 0.35, 1.2); synth.play('thud', 0.4, 1.4, p); }
@@ -1549,7 +1580,7 @@ class PlugPanel {
   constructor(frame, pos, node, station) {
     this.node = node; this.station = station; this.locked = false; this.plugged = null; this.ejectT = 0; this.group = new THREE.Group(); this.group.position.copy(pos); frame.add(this.group);
     const g = this.group; addMesh(g, rbox(0.62, 0.36, 0.05, 0.03), MAT.darkWood, 0, 0, 0); addMesh(g, rbox(0.66, 0.4, 0.03, 0.03), MAT.gold, 0, 0, -0.02);
-    const title = new TextSprite('Collega la porta logica', { size: 0.035, w: 768, h: 96, color: '#ffe08a' }); title.sprite.position.set(0, 0.23, 0.04); g.add(title.sprite);
+    const title = new TextSprite('Infila lo spinotto rosso nella porta giusta', { size: 0.035, w: 768, h: 96, color: '#ffe08a' }); title.sprite.position.set(0, 0.23, 0.04); g.add(title.sprite);
     this.sockets = ['AND', 'OR', 'XOR', 'XNOR', 'NAND'].map((type, k) => {
       const x = -0.24 + k * 0.12, s = { type, local: new V3(x, 0.03, 0.035), world: new V3() };
       addMesh(g, new THREE.CylinderGeometry(0.026, 0.026, 0.02, 20), MAT.black, x, 0.03, 0.03, Math.PI / 2);
@@ -1566,8 +1597,8 @@ class PlugPanel {
   init() {
     this.group.updateMatrixWorld(true); for (const s of this.sockets) this.group.localToWorld(s.world.copy(s.local));
     const anchor = this.group.localToWorld(this.anchorLocal.clone()); this.rope = new Rope(anchor, 18, 1.0, 0xc8202c);
-    const m = new THREE.Group(); addMesh(m, new THREE.CylinderGeometry(0.018, 0.018, 0.07, 14), MAT.red, 0, 0, 0, Math.PI / 2); addMesh(m, new THREE.CylinderGeometry(0.006, 0.006, 0.05, 8), MAT.silver, 0, 0, -0.055, Math.PI / 2);
-    const home = this.group.localToWorld(new V3(-0.25, -0.3, 0.12)); this.homePos = home.clone();
+    const m = new THREE.Group(); this.plugMat = new THREE.MeshStandardMaterial({ color: 0xc8202c, roughness: 0.4, emissive: 0xff3030, emissiveIntensity: 0.6 }); addMesh(m, new THREE.CylinderGeometry(0.022, 0.022, 0.08, 16), this.plugMat, 0, 0, 0, Math.PI / 2); addMesh(m, new THREE.CylinderGeometry(0.006, 0.006, 0.05, 8), MAT.silver, 0, 0, -0.055, Math.PI / 2);
+    const home = this.group.localToWorld(new V3(-0.2, -0.19, 0.24)); this.homePos = home.clone();
     this.plug = new Prop({ name: 'Spinotto', kind: 'plug', mesh: m, half: [0.02, 0.02, 0.055], mass: 0.1, sound: 'plastic', area: 'factory', home: { pos: home, quat: this.group.getWorldQuaternion(new Q()) }, respawn: 3 });
     this.plug.socketOwner = this; this.anchorW = anchor;
   }
@@ -1577,16 +1608,17 @@ class PlugPanel {
     const q = this.group.getWorldQuaternion(new Q()); b.position.set(s.world.x, s.world.y, s.world.z); _v4.set(0, 0, 0.04).applyQuaternion(q); b.position.x += _v4.x; b.position.y += _v4.y; b.position.z += _v4.z; b.quaternion.set(q.x, q.y, q.z, q.w);
     this.plugged = s; this.node.chipType = s.type; synth.play('plug', 1, 1, s.world);
     if (this.station.checkTarget()) { this.locked = true; setLamp(this.okLamp, true); synth.play('magic', 0.6, 1, s.world); }
-    else { synth.play('spark', 0.9, 1, s.world); setTimeout(() => synth.play('error', 0.7, 1, s.world), 300); this.ejectT = 1.4; this.station.msg = ['✗ Porta sbagliata: guarda la colonna OK', CSS_FALSE]; }
+    else { synth.play('spark', 0.9, 1, s.world); setTimeout(() => synth.play('error', 0.7, 1, s.world), 300); this.ejectT = 1.4; this.station.msg = ['✗ Porta sbagliata: guarda la colonna OK', CSS_FALSE]; if (this.station.onWrong) this.station.onWrong(s.type); }
   }
   detach(plug) { if (!this.plugged) return; this.plugged = null; this.node.chipType = null; this.ejectT = 0; plug.state = 'free'; plug.makeDynamic(); }
   update(dt) {
     if (!this.plug) return; const p = this.plug;
     if (this.ejectT > 0) { this.ejectT -= dt; if (this.ejectT <= 0 && this.plugged) { this.detach(p); p.grabCool = 0.6; const q = this.group.getWorldQuaternion(_q2); _v4.set(0, 1.2, 1.4).applyQuaternion(q); p.body.velocity.set(_v4.x, _v4.y, _v4.z); synth.play('pop', 0.8, 1, p.mesh.position); this.station.msg = ['Prova un\'altra porta!', CSS_WAIT]; } }
-    if (!this.plugged && !this.locked && (p.state === 'free' || p.state === 'held') && p.grabCool <= 0) for (const s of this.sockets) if (_v4.set(p.body.position.x, p.body.position.y, p.body.position.z).distanceTo(s.world) < 0.065) { this.insert(p, s); break; }
+    if (!this.plugged && !this.locked && (p.state === 'free' || p.state === 'held') && p.grabCool <= 0) { _v4.set(p.body.position.x, p.body.position.y, p.body.position.z); let best = null, bd = 0.11; for (const s of this.sockets) { const d = _v4.distanceTo(s.world); if (d < bd) { bd = d; best = s; } } if (best) this.insert(p, best); }
     // la corda limita la distanza dello spinotto
     const b = p.body, dx = b.position.x - this.anchorW.x, dy = b.position.y - this.anchorW.y, dz = b.position.z - this.anchorW.z, d = Math.hypot(dx, dy, dz), L = 1.05;
     if (d > L && p.state !== 'socket') { const k = L / d; b.position.set(this.anchorW.x + dx * k, this.anchorW.y + dy * k, this.anchorW.z + dz * k); const vr = (b.velocity.x * dx + b.velocity.y * dy + b.velocity.z * dz) / d; if (vr > 0) { b.velocity.x -= vr * dx / d; b.velocity.y -= vr * dy / d; b.velocity.z -= vr * dz / d; } }
+    this.plugMat.emissiveIntensity = this.plugged ? 0.15 : 0.5 + 0.5 * Math.sin(performance.now() / 180);
     p.mesh.localToWorld(_v5.set(0, 0, 0.035)); this.rope.update(dt, _v5);
     setLamp(this.okLamp, this.locked);
   }
@@ -1983,6 +2015,8 @@ class OvenDoor {
   animateTo(a) { this.auto = a; synth.play('creak', 0.5, rnd(1.0, 1.2), this.grabCenter(new V3())); }
   touch(touches) {
     if (this.holder || !isVisibleChain(this.group)) return;
+    let onHandle = false; for (const t of touches) if (this.grabDist(t.pos) < t.r + 0.01) onHandle = true;
+    if (onHandle && !this.wasHandle && this.auto === null) { this.click(); this.wasHandle = true; return; } this.wasHandle = onHandle; if (this.auto !== null) return;
     for (const t of touches) {
       const l = this.local(t.pos, _v4); if (Math.abs(l.x) > this.half + t.r) continue; const r = Math.hypot(l.y, l.z); if (r < 0.06 || r > this.L + 0.02) continue;
       const phi = Math.atan2(l.z, l.y), gap = (this.thick / 2 + t.r + 0.004) / r, d = phi - this.angle; if (Math.abs(d) > gap) continue;
@@ -2149,6 +2183,7 @@ const BUILDERS = {
     addStaticLocal(F, 0, 0.8, -2.0, 0.3, 0.8, 0.2);
     st.boardPose = { pos: new V3(0, 2.75, -3.1), ry: 0 };
     st.onReset = () => { st.panel.reset(); };
+    st.onWrong = type => { const e = elves[5]; if (e && e.root.visible) { e.say(`Quella era una ${type}: con A e B uguali non dà sempre 1. Prova un'altra presa!`, 5); e.setMode('wave', 1.5); } };
     st.onSolvedQuiet = () => { const s = st.panel.sockets.find(q => q.type === 'XNOR'); st.panel.insert(st.panel.plug, s); };
     st.fx = (dt, t) => {
       st.panel.update(dt); const tilt = ((st.inputs.B.value ? 1 : 0) - (st.inputs.A.value ? 1 : 0)) * 0.25; st.beam.rotation.z += (tilt - st.beam.rotation.z) * Math.min(1, dt * 3);
@@ -2220,12 +2255,11 @@ function buildTeam() {
     const pts = []; for (const d of team.deer) { pts.push(new V3(0, 0.75, 1.15), new V3(d.group.position.x, 0.85, d.group.position.z - 0.35)); }
     T.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xf2c45a })));
   };
-  let done = false; const fallback = setTimeout(() => { if (!done) { done = true; place(null); } }, 9000);
-  const loader = new GLTFLoader(); let i = 0;
+  place(null);
+  const done = true, loader = null, i = 0;
   const tryNext = () => { if (done) return; if (i >= HORSE_URLS.length) { done = true; clearTimeout(fallback); place(null); return; } loader.load(HORSE_URLS[i++], gltf => { if (done) return; done = true; clearTimeout(fallback); const proto = prepareHorse(gltf); place(proto); }, undefined, () => tryNext()); };
-  tryNext();
 }
-team.takeoff = function () { this.state = 'run'; this.s = 0; this.v = 0; music.play('jingle', 0.4); synth.play('fanfare', 0.7); };
+team.takeoff = function () { if (!santa.seat) { const seat = this.sleigh.userData.seat; seat.attach(santa.root); santa.root.position.set(0, 0, 0); santa.root.rotation.set(0, 0, 0); santa.seat = seat; santa.mode = 'sit'; } this.state = 'run'; this.s = 0; this.v = 0; music.play('jingle', 0.4); synth.play('fanfare', 0.7); };
 team.reset = function () { this.state = 'parked'; this.s = 0; this.v = 0; this.group.position.set(0, 0, 10); this.group.rotation.set(0, 0, 0); this.group.visible = true; };
 team.update = function (dt, t) {
   if (this.state === 'run') {
@@ -2248,7 +2282,12 @@ let santa = null; const elves = [];
 function buildCharacters() {
   santa = new Character('santa');
   ELF_NAMES.forEach((n, k) => elves.push(new Character('elf', { name: n, look: k, scale: 0.95 + (k % 3) * 0.05, pitch: 0.85 + (k % 4) * 0.12 })));
+  initHud();
+  for (const c of [santa, ...elves]) { const m = c.bubble.sprite.material; m.map = talkIcon(c.color); m.depthTest = true; m.needsUpdate = true; c.bubble.sprite.scale.set(0.16, 0.12, 1); c.bubble.set = () => {}; }
 }
+{ const say0 = Character.prototype.say, hush0 = Character.prototype.hush;
+  Character.prototype.say = function (text, dur) { say0.call(this, text, dur); hudShow(this, text); };
+  Character.prototype.hush = function () { hush0.call(this); hudHide(this); }; }
 function buildProps() {
   // salotto: biscotti e latte
   for (let k = 0; k < 5; k++) { const a = k / 5 * TAU; makeCookie(new V3(1.15 + Math.cos(a) * 0.1, 0.56, 1.95 + Math.sin(a) * 0.1), 'house'); }
@@ -2290,7 +2329,7 @@ function nextItem() {
   if (!game.cur) { const cb = game.onDone; game.onDone = null; if (cb) cb(); return; }
   const it = game.cur;
   if (Array.isArray(it)) { const [w, text, anim] = it; if (typeof text === 'string') { const ch = whoChar(w); it.ch = ch; game.curT = sayLine(ch, text, anim); return; } }
-  if (it.fn) { it.fn(); game.curT = it.wait || 0; return; }
+  if (it.fn) { it.fn(); game.curT = it.until ? Infinity : (it.wait || 0); return; }
   if (it.wait !== undefined) { game.curT = it.wait; return; }
   if (it.until) { game.curT = Infinity; return; }
   game.curT = 0;
@@ -2363,18 +2402,19 @@ function goLiving() {
   travel('house', P.x, P.z, P.yaw, () => {
     music.play('silent', 0.24); santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(2.55, 1.0, -Math.PI / 2); santa.mode = 'idle'; santa.seat = null;
     elves.forEach(e => e.root.visible = false); placeElf(7, new V3(-0.6, 0, 1.9), Math.PI / 2); placeElf(8, new V3(-0.1, 0, 2.6), Math.PI); placeElf(0, new V3(2.2, 0, 0.0), -0.5);
-    game.ate = false;
+    game.ate = false; eaters.length || [santa, elves[7], elves[8], elves[0]].forEach(c => giveCookie(c)); eaters.forEach(e => { e.ch.mode = 'eat'; e.on = true; });
     runSeq([...SCRIPT.living, { until: () => game.ate, max: 35, skippable: true }, { wait: 1.2 }, ...SCRIPT.livingAte], () => goYard());
   });
 }
 function goYard() {
+  eaters.forEach(e => { e.m.visible = false; });
   game.phase = 'yard'; hideAllBubbles(); team.reset();
   const P = poseLook(-3.3, 11.8, 0, 10.2);
   travel('yard', P.x, P.z, P.yaw, () => {
     music.play('jingle', 0.28); santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(-1.4, 8.6, 0.6); santa.mode = 'idle'; santa.seat = null;
     elves.forEach((e, k) => { placeElf(k, new V3(2.6 + (k % 3) * 0.7, 0, 7.0 + Math.floor(k / 3) * 1.4), -Math.PI / 2 - 0.4); });
     const items = SCRIPT.yard.map(l => {
-      if (l[0] === 'board') return { fn: () => boardSleigh(), wait: 3.2 };
+      if (l[0] === 'board') return { fn: () => boardSleigh(), until: () => !!santa.seat, max: 9 };
       if (l[0] === 'fly') return { fn: () => { team.takeoff(); elves.forEach((e, k) => setTimeout(() => e.setMode('cheer', 12), k * 120)); }, wait: 3.0 };
       if (l[0] === 'end') return { fn: () => showEnd(), wait: 0.5 };
       return l;
@@ -2384,9 +2424,9 @@ function goYard() {
 }
 function boardSleigh() {
   santa.walkTo(-0.95, 9.7, 1.0, () => {
-    const seat = team.sleigh.userData.seat, start = santa.root.position.clone(), t0 = performance.now();
-    const hop = () => { const u = Math.min(1, (performance.now() - t0) / 700); seat.getWorldPosition(_v4); santa.root.position.lerpVectors(start, _v4, u); santa.root.position.y += Math.sin(u * Math.PI) * 0.5; if (u < 1) requestAnimationFrame(hop); else { seat.attach(santa.root); santa.root.position.set(0, 0, 0); santa.root.rotation.set(0, 0, 0); santa.seat = seat; santa.setMode('sit', 0); santa.mode = 'sit'; synth.play('jingle', 0.6); } };
-    synth.play('boing', 0.5, 0.8, santa.root.position); hop();
+    const seat = team.sleigh.userData.seat, start = santa.root.position.clone();
+    tween(0.8, u => { seat.getWorldPosition(_v4); santa.root.position.lerpVectors(start, _v4, u); santa.root.position.y += Math.sin(u * Math.PI) * 0.5; }, () => { seat.attach(santa.root); santa.root.position.set(0, 0, 0); santa.root.rotation.set(0, 0, 0); santa.seat = seat; santa.setMode('sit', 0); santa.mode = 'sit'; synth.play('jingle', 0.6); });
+    synth.play('boing', 0.5, 0.8, santa.root.position);
   });
 }
 function showEnd() { game.phase = 'end'; game.endShown = true; endPanel.visible = true; endPanel.material.opacity = 0; endPanel.position.set(0, 20, 40); synth.play('fanfare', 0.7); for (let k = 0; k < 10; k++) setTimeout(() => sparkBurst(new V3(rnd(-6, 6), rnd(10, 18), rnd(25, 40)), 30, [0xffe08a, 0xff6a5a, 0x8ad0ff, 0xb8ff9a][k % 4]), k * 400); }
@@ -2399,6 +2439,52 @@ function teacherGo(key) {
   const i = +key.slice(1); setProgress(i); goStation(i);
 }
 let endPanel = null;
+// piccole animazioni a tempo, aggiornate dal ciclo principale (funzionano anche dentro il visore)
+const tweens = [];
+function tween(dur, fn, done) { tweens.push({ t: 0, dur, fn, done }); }
+function updateTweens(dt) { for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += dt; const u = Math.min(1, w.t / w.dur); w.fn(u); if (u >= 1) { tweens.splice(i, 1); if (w.done) w.done(); } } }
+// sottotitoli davanti agli occhi: niente torcicollo per leggere chi parla
+const hud = { b: null, owner: null, dir: new V3(), shown: false };
+function initHud() { hud.b = new Bubble(); const m = hud.b.sprite.material; m.depthTest = false; m.fog = false; hud.b.sprite.renderOrder = 1700; hud.b.sprite.scale.set(0.78, 0.32, 1); }
+function hudShow(ch, text) {
+  camera.getWorldDirection(_v1); headPos(_v2); const tw = ch.headWorld(_v3).sub(_v2); tw.y = 0; _v1.y = 0;
+  const side = _v1.lengthSq() > 1e-6 && tw.lengthSq() > 1e-6 ? Math.atan2(_v1.x * tw.z - _v1.z * tw.x, _v1.dot(tw)) : 0;
+  const name = Math.abs(side) < 0.6 ? ch.name : side > 0 ? ch.name + '  ▶' : '◀  ' + ch.name;
+  hud.b.set(name, text, ch.color); hud.owner = ch; hud.b.sprite.visible = true; if (!hud.shown) hud.snap = true; hud.shown = true;
+}
+function hudHide(ch) { if (!ch || hud.owner === ch) { hud.owner = null; hud.b.sprite.visible = false; hud.shown = false; } }
+function updateHud(dt, head) {
+  if (!hud.owner) return; if (!(hud.owner.talking > 0)) return hudHide();
+  camera.getWorldDirection(_v1); if (_v1.y > 0.35) _v1.y = 0.35; _v1.normalize();
+  if (hud.snap) { hud.dir.copy(_v1); hud.snap = false; hud.moving = false; }
+  const ang = hud.dir.angleTo(_v1); if (ang > 0.26) hud.moving = true; if (hud.moving) { hud.dir.lerp(_v1, Math.min(1, dt * 4)).normalize(); if (ang < 0.04) hud.moving = false; }
+  hud.b.sprite.position.copy(head).addScaledVector(hud.dir, 1.25); hud.b.sprite.position.y -= 0.1;
+}
+// fumetto piccolo sopra la testa (solo per capire chi parla)
+function talkIcon(color) { return canvasTex(160, 120, (g, w, h) => { g.fillStyle = '#fffaf0'; g.strokeStyle = color; g.lineWidth = 8; roundRect(g, 8, 8, w - 16, h - 40, 30); g.fill(); g.stroke(); g.beginPath(); g.moveTo(w / 2 - 14, h - 34); g.lineTo(w / 2, h - 8); g.lineTo(w / 2 + 14, h - 34); g.fill(); g.fillStyle = color; for (let k = -1; k <= 1; k++) { g.beginPath(); g.arc(w / 2 + k * 32, (h - 32) / 2 + 4, 9, 0, TAU); g.fill(); } }); }
+// voce "borbottata": sillabe con formanti delle vocali, voce grave per Babbo Natale e acuta per gli elfi
+voice.blip = function (ch) {
+  if (!synth.ctx || !synth.enabled) return; const ctx = synth.ctx, t = ctx.currentTime, big = ch.kind === 'santa';
+  const f0 = (big ? 105 : 250 * (ch.pitch || 1)) * rnd(0.86, 1.2), V = [[730, 1090], [530, 1840], [300, 2250], [570, 840], [320, 900]][(Math.random() * 5) | 0], dur = big ? rnd(0.1, 0.16) : rnd(0.06, 0.1);
+  const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * rnd(0.88, 1.12), t + dur);
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(big ? 0.55 : 0.45, t + 0.014); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  V.forEach((f, k) => { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * (big ? 0.82 : 1.18); bp.Q.value = k ? 8 : 5; const gk = ctx.createGain(); gk.gain.value = k ? 1.6 : 2.6; o.connect(bp); bp.connect(gk); gk.connect(g); });
+  ch.headWorld(_v1); const p = synth.panner(_v1, 1.8); g.connect(p); p.connect(synth.master); o.start(t); o.stop(t + dur + 0.03);
+};
+// biscotti sgranocchiati da Babbo Natale e dagli elfi
+const eaters = [];
+function giveCookie(ch) { const m = new THREE.Group(); const disc = addMesh(m, new THREE.CylinderGeometry(0.045, 0.045, 0.014, 24), MAT.cookie, 0, 0, 0, Math.PI / 2); for (let k = 0; k < 5; k++) addMesh(m, new THREE.SphereGeometry(0.007, 6, 5), std(0x3a2214, 0.6), Math.cos(k * 1.3) * 0.025, Math.sin(k * 1.3) * 0.025, 0.008); m.visible = false; scene.add(m); eaters.push({ ch, m, disc, t: rnd(0, 2.5), bites: 0, bit: false, on: false }); }
+function updateEaters(dt, t) {
+  for (const e of eaters) {
+    const c = e.ch; if (!e.on || game.phase !== 'living' || !c.root.visible) { e.m.visible = false; c.eatK = 0; continue; }
+    if (c.mode === 'idle') c.mode = 'eat'; e.m.visible = true;
+    let k = 0; if (!(c.talking > 0)) { e.t += dt; const u = e.t % 3.4; k = u < 0.6 ? smooth(u / 0.6) : u < 1.3 ? 1 : u < 1.9 ? 1 - smooth((u - 1.3) / 0.6) : 0; if (u > 0.62 && u < 1.3 && !e.bit) { e.bit = true; e.bites++; c.head.localToWorld(_v4.set(0, 0.09, 0.2)); synth.play('crunch', 0.7, rnd(0.95, 1.25) * (c.kind === 'santa' ? 0.8 : 1.15), _v4); for (let j = 0; j < 7; j++) bursts.spawn(_v4, new V3(rnd(-0.3, 0.3), rnd(-0.1, 0.4), rnd(-0.1, 0.4)), 0xc8904a); e.m.scale.setScalar(Math.max(0.35, 1 - e.bites * 0.22)); } if (u > 1.9) { e.bit = false; if (e.bites >= 3) { e.bites = 0; e.m.scale.setScalar(1); } } }
+    c.eatK = (c.eatK || 0) + (k - (c.eatK || 0)) * Math.min(1, dt * 10);
+    const hand = c.elR.localToWorld(_v4.set(0, c.kind === 'santa' ? -0.34 : -0.15, 0.05)), mouth = c.head.localToWorld(_v5.set(0, c.kind === 'santa' ? 0.09 : 0.085, c.kind === 'santa' ? 0.25 : 0.2));
+    e.m.position.lerpVectors(hand, mouth, c.eatK * 0.9); c.head.getWorldQuaternion(e.m.quaternion);
+    if (c.eatK > 0.5 && !(c.talking > 0) && c.mouth) c.mouth.scale.y = c.mouthBase * (0.4 + 1.3 * Math.abs(Math.sin(t * 13)));
+  }
+}
 function helpStation() {
   const st = game.stIdx >= 0 ? stations[game.stIdx] : null; if (!st || st.solved || game.phase !== 'play') return;
   game.playT = 0; const e = elves[st.idx]; if (e) { e.say('Ti do una mano: guarda la tabella di verità, la riga con Y = 1!', 5); e.setMode('wave', 2); }
@@ -2475,7 +2561,7 @@ function hapticPulse(i, intensity = 0.6, ms = 40) { if (i === undefined || i < 0
 function rayHit(origin, dir, far = 10) { raycaster.ray.origin.copy(origin); raycaster.ray.direction.copy(dir); raycaster.far = far; const hits = raycaster.intersectObjects(rayTargets, true); for (const h of hits) { const t = findTarget(h.object); if (t && (t === floorTarget ? isVisibleChain(h.object.parent) : isVisibleChain(h.object))) return h; } return null; }
 function rayFromController(ctrl) { tmpMat.identity().extractRotation(ctrl.matrixWorld); return rayHit(_v1.setFromMatrixPosition(ctrl.matrixWorld), _v2.set(0, 0, -1).applyMatrix4(tmpMat), 10); }
 function grabDistance(t, p) { return t.distTo ? t.distTo(p) : t.grabDist(p); }
-function findGrabTarget(p) { let best = null, bd = 0.05; for (const t of grabbables) { if (t.grabbable && !t.grabbable()) continue; if (t.group && !isVisibleChain(t.group)) continue; const d = grabDistance(t, p); if (d < bd) { bd = d; best = t; } } return best; }
+function findGrabTarget(p) { let best = null, bd = 0.08; for (const t of grabbables) { if (t.grabbable && !t.grabbable()) continue; if (t.group && !isVisibleChain(t.group)) continue; const d = grabDistance(t, p); if (d < bd) { bd = d; best = t; } } return best; }
 function headPos(out) { return camera.getWorldPosition(out); }
 function navLocal(a, x, z) { if (!a.obb) return [x, z, (a.x0 + a.x1) / 2, (a.z0 + a.z1) / 2, (a.x1 - a.x0) / 2, (a.z1 - a.z0) / 2]; const dx = x - a.cx, dz = z - a.cz, c = Math.cos(a.yaw), s = Math.sin(a.yaw); return [dx * c - dz * s, dx * s + dz * c, 0, 0, a.hx, a.hz]; }
 function validSpot(x, z, m = 0.2) { const B = WALK[game.area]; if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return false; for (const a of NAV[game.area]) { const [lx, lz, cx, cz, hx, hz] = navLocal(a, x, z); if (Math.abs(lx - cx) < hx + m && Math.abs(lz - cz) < hz + m) return false; } return true; }
@@ -2677,7 +2763,7 @@ renderer.setAnimationLoop(() => {
   processTouch(touches); updateRays();
   });
   // storia e stazioni
-  safe('story', () => updateSeq(dt));
+  safe('story', () => { updateTweens(dt); updateSeq(dt); });
   safe('stations', () => {
   const cur = game.stIdx >= 0 ? stations[game.stIdx] : null;
   for (const s of stations) s.update(dt, t, game.area === 'factory', s === cur);
@@ -2699,6 +2785,7 @@ renderer.setAnimationLoop(() => {
   });
   safe('chars', () => {
   if (santa.root.visible) santa.update(dt, t, headPosV); for (const e of elves) if (e.root.visible) e.update(dt, t, headPosV);
+  updateEaters(dt, t); updateHud(dt, headPosV);
   });
   safe('buttons', () => {
   const talking = !!game.cur && (Array.isArray(game.cur) || game.cur.skippable);
