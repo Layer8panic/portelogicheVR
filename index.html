@@ -351,19 +351,19 @@ const GATE_INFO = {
    LE 7 STAZIONI DELLA FABBRICA
    ========================================================= */
 const STATIONS_CFG = [
-  { key: 'oven', gate: 'NOT', title: 'Il forno dei biscotti', elf: 0, ang: 150, task: 'Il forno scalda solo se lo sportello NON è aperto. Chiudi lo sportello del forno!',
+  { key: 'oven', steps: ['Lo sportello del forno è aperto: A = 1', 'Prendi la maniglia dorata e CHIUDI lo sportello', 'La NOT rovescia: A = 0  →  Y = 1, il forno scalda!'], gate: 'NOT', title: 'Il forno dei biscotti', elf: 0, ang: 150, task: 'Il forno scalda solo se lo sportello NON è aperto. Chiudi lo sportello del forno!',
     inputs: { A: 1 }, desc: { A: 'Sportello aperto' }, build: I => new GateNode('g1', 'NOT', [I.A]) },
-  { key: 'teddy', gate: 'AND', title: "L'imbottitrice di orsetti", elf: 1, ang: 190, task: 'Servono imbottitura E filo: apri entrambi i rubinetti girando le ruote.',
+  { key: 'teddy', steps: ['Afferra la ruota ROSSA (A) e girala fino in fondo', 'Gira fino in fondo anche la ruota VERDE (B)', 'AND: Y = 1 solo se A = 1 E B = 1'], gate: 'AND', title: "L'imbottitrice di orsetti", elf: 1, ang: 190, task: 'Servono imbottitura E filo: apri entrambi i rubinetti girando le ruote.',
     inputs: { A: 0, B: 0 }, desc: { A: 'Rubinetto imbottitura', B: 'Rubinetto filo' }, build: I => new GateNode('g1', 'AND', [I.A, I.B]) },
-  { key: 'train', gate: 'OR', title: 'Il trenino dei regali', elf: 2, ang: 230, task: 'Il trenino parte col carbone O con la batteria. Premi i tasti verdi 1 o rossi 0.',
+  { key: 'train', steps: ['Premi il tasto VERDE (1) del Carbone o della Batteria', 'Il tasto ROSSO rimette quell\'ingresso a 0', 'OR: basta UN solo ingresso a 1'], gate: 'OR', title: 'Il trenino dei regali', elf: 2, ang: 230, task: 'Il trenino parte col carbone O con la batteria. Premi i tasti verdi 1 o rossi 0.',
     inputs: { A: 0, B: 0 }, desc: { A: 'Carbone', B: 'Batteria' }, build: I => new GateNode('g1', 'OR', [I.A, I.B]) },
-  { key: 'wrap', gate: 'XOR', title: 'Il nastro dei pacchetti', elf: 3, ang: 310, task: 'Due chiavi, una per lato. Il nastro parte solo se UNA SOLA chiave è su 1. Tutte e due su 1 = blocco di sicurezza. Gira una chiave!',
+  { key: 'wrap', steps: ['Adesso tutte e due le chiavi sono su 1: nastro fermo', 'Gira UNA SOLA chiave su 0 (toccala o ruota il polso)', 'XOR: Y = 1 solo se A e B sono DIVERSI'], gate: 'XOR', title: 'Il nastro dei pacchetti', elf: 3, ang: 310, task: 'Due chiavi, una per lato. Il nastro parte solo se UNA SOLA chiave è su 1. Tutte e due su 1 = blocco di sicurezza. Gira una chiave!',
     inputs: { A: 1, B: 1 }, desc: { A: 'Chiave di Fiocco', B: 'Chiave di Neve' }, build: I => new GateNode('g1', 'XOR', [I.A, I.B]) },
-  { key: 'snow', gate: 'NOR', title: 'Il cannone della neve', elf: 4, ang: 350, task: 'Il cannone spara neve solo se NESSUNO sportello è aperto. Chiudili con le leve di zucchero!',
+  { key: 'snow', steps: ['Le leve sono verso di te (1): sportelli aperti', 'Spingi TUTTE E DUE le leve lontano da te (0)', 'NOR: Y = 1 solo se TUTTI gli ingressi sono 0'], gate: 'NOR', title: 'Il cannone della neve', elf: 4, ang: 350, task: 'Il cannone spara neve solo se NESSUNO sportello è aperto. Chiudili con le leve di zucchero!',
     inputs: { A: 1, B: 1 }, desc: { A: 'Sportello sinistro aperto', B: 'Sportello destro aperto' }, build: I => new GateNode('g1', 'NOR', [I.A, I.B]) },
-  { key: 'scale', gate: 'XNOR', title: 'La bilancia dei regali', elf: 5, ang: 30, task: '1) Infila lo spinotto rosso in una presa. 2) Metti i pacchi sui piatti e guarda la lampada. Deve accendersi solo se i piatti sono UGUALI (tutti e due vuoti o tutti e due pieni).',
-    inputs: { A: 0, B: 0 }, desc: { A: 'Pacco sul piatto sinistro', B: 'Pacco sul piatto destro' }, plug: true, target: v => v.A === v.B, build: I => new SocketNode('s1', [I.A, I.B]) },
-  { key: 'gate', gate: 'NAND', title: 'Il portone del magazzino', elf: 6, ang: 270, task: 'Suona la combinazione e tieni Y a 1 per 2 secondi. A e B diversi, almeno uno tra C e D, MAI A e D insieme!',
+  { key: 'scale', steps: ['Prendi lo SPINOTTO ROSSO sul banco', 'Infilalo in una delle 5 prese del pannello', 'La bilancia prova da sola le 4 combinazioni', 'La tua lampada Y deve fare come la lampada OBIETTIVO'], gate: 'XNOR', title: 'La bilancia dei regali', elf: 5, ang: 30, task: 'Collega il cervello della bilancia: la lampada deve accendersi solo quando i due piatti sono UGUALI.',
+    inputs: { A: 0, B: 0 }, desc: { A: 'Pacco sul piatto sinistro', B: 'Pacco sul piatto destro' }, auto: true, plug: true, target: v => v.A === v.B, build: I => new SocketNode('s1', [I.A, I.B]) },
+  { key: 'gate', steps: ['Premi i tasti del pianoforte: abbassato = 1', 'Rispetta le 3 regole qui sotto', 'Quando Y = 1, aspetta 2 secondi senza toccare'], gate: 'NAND', title: 'Il portone del magazzino', elf: 6, ang: 270, task: 'Suona la combinazione e tieni Y a 1 per 2 secondi. A e B diversi, almeno uno tra C e D, MAI A e D insieme!',
     inputs: { A: 0, B: 0, C: 0, D: 0 }, desc: { A: 'Nota La', B: 'Nota Si', C: 'Nota Do', D: 'Nota Re' }, hold: 2.0,
     build: I => new GateNode('g6', 'AND', [new GateNode('g3', 'AND', [new GateNode('g1', 'XOR', [I.A, I.B]), new GateNode('g2', 'OR', [I.C, I.D])]), new GateNode('g5', 'NAND', [I.A, I.D])]) }
 ];
@@ -392,7 +392,7 @@ const SCRIPT = {
       win: [[3, 'I pacchetti viaggiano e si incartano da soli! Che meraviglia!'], [7, 'La XOR è come l\'interruttore delle scale di casa tua.'], [8, 'Io mi sono incartato un piede. Qualcuno mi aiuta?']] },
     { intro: [[4, 'Brrr! Il cannone spara neve solo se NESSUNO sportello è aperto.'], [4, 'È una NOR, cioè NOT OR: dà 1 solo se tutti gli ingressi sono 0. Abbassa le leve di zucchero!']],
       win: [[4, 'Nevica sul villaggio in miniatura! Guarda che bello!'], [7, 'Lo sapevi? NOT(A OR B) è uguale a (NOT A) AND (NOT B): la legge di De Morgan!'], [8, 'Ho preso una palla di neve in faccia. È stato bellissimo.']] },
-    { intro: [[5, 'Questa è la bilancia dei regali: controlla che i due piatti siano UGUALI, così i pacchi partono in coppia.'], [5, 'Ma ha perso il suo cervello! Alla tua sinistra c\'è un pannello con 5 prese: ognuna è una porta logica diversa.'], [5, 'Prendi lo SPINOTTO ROSSO sulla mensola e infilalo in una presa. Poi metti i due pacchi sui piatti e guarda la lampada.'], [7, 'La lampada deve accendersi quando i piatti sono uguali: tutti e due vuoti, oppure tutti e due con un pacco. Se sbagli porta, sfila lo spinotto e riprova!']],
+    { intro: [[5, 'Questa è la bilancia dei regali: controlla che i due piatti siano UGUALI, così i pacchi partono in coppia.'], [5, 'Guarda: la bilancia prova da sola tutte le combinazioni. Mette e toglie i pacchi sui piatti, uno alla volta.'], [5, 'La lampada OBIETTIVO dice cosa dovrebbe succedere: accesa quando i piatti sono uguali, tutti e due vuoti o tutti e due pieni.'], [7, 'Ma la bilancia ha perso il cervello! Prendi lo spinotto rosso sul banco e infilalo in una presa: ogni presa è una porta logica.'], [5, 'Se la tua lampada fa sempre come quella OBIETTIVO, hai trovato la porta giusta. Se no, sfila lo spinotto e provane un\'altra!']],
       win: [[5, 'Perfettamente in equilibrio! Era una XNOR, il comparatore!'], [8, 'Io peso esattamente… un elfo e mezzo.'], [7, 'Ultima macchina: il portone del magazzino. Tastino lo apre col pianoforte!']] },
     { intro: [[6, 'Il portone si apre suonando la combinazione giusta sul pianoforte: A è il La, B il Si, C il Do e D il Re, proprio come nella notazione inglese!'], [6, 'Ricorda: A e B diversi, almeno uno tra C e D, ma MAI A e D insieme. Poi tieni Y a 1 per 2 secondi!']],
       win: [[6, 'Si apre! Il magazzino è pieno di regali!'], ['S', 'Oh oh oh! Ce l\'avete fatta! Avete salvato il Natale!', 'wave'], ['S', 'Quella era una NAND, la porta universale: con le NAND si può costruire qualsiasi circuito.'], ['S', 'Venite in salotto: vi ho preparato latte e biscotti!']] }
@@ -1235,12 +1235,12 @@ function snowman(x, z, s = 1, ry = 0) {
 function buildYard() {
   const path = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 30), std(0xd8e2f0, 0.9)); path.rotation.x = -Math.PI / 2; path.position.set(1.8, 0.005, 19); yardGroup.add(path);
   for (let z = 5.5; z < 30; z += 2.2) for (const sx of [-1, 1]) { const c = addMesh(yardGroup, candyCaneGeo(1.0, 0.04), MAT.candy, 1.8 + sx * 1.35, 0, z, 0, sx > 0 ? Math.PI : 0); }
-  snowman(-4.5, 8, 1.1, 0.6); snowman(6.5, 12, 0.9, -0.8);
+  snowman(-6.0, 11.0, 1.1, 0.9); snowman(6.5, 12, 0.9, -0.8);
   for (const [x, z] of [[-1.5, 6.5], [5.2, 6.5], [-1.5, 14], [5.2, 14]]) { addMesh(yardGroup, new THREE.CylinderGeometry(0.04, 0.06, 2.6, 10), MAT.iron, x, 1.3, z); addMesh(yardGroup, rbox(0.25, 0.32, 0.25, 0.04), MAT.iron, x, 2.7, z); addMesh(yardGroup, new THREE.SphereGeometry(0.1, 12, 10), glowMat(0xffc070, 3), x, 2.7, z); addMesh(yardGroup, fluffyTorus(0.14, 0.05, 0.4, 7), MAT.holly, x, 2.3, z, Math.PI / 2); }
   srand(42);
   for (let k = 0; k < 7; k++) { const t = christmasTree(srr(3.5, 5.5), srr(1.3, 1.8), { lights: 90, snow: true, ornaments: 0, star: k % 2 === 0 }); t.position.set(k % 2 ? srr(8, 14) : srr(-14, -8), 0, srr(6, 28)); yardGroup.add(t); }
   // cumulo di neve per fare palle di neve
-  addMesh(yardGroup, fluffy(0.9, 0.08, 2, 28, 18, 4), MAT.snow, -2.6, -0.45, 11.2, 0, 0, 0, 1, 0.75, 1);
+  addMesh(yardGroup, fluffy(0.9, 0.08, 2, 28, 18, 4), MAT.snow, -5.4, -0.45, 7.4, 0, 0, 0, 1, 0.75, 1);
   for (let k = 0; k < 18; k++) { const a = k / 18 * TAU; addMesh(yardGroup, new THREE.CylinderGeometry(0.03, 0.03, 0.9, 6), MAT.darkWood, -7 + Math.cos(a) * 0, 0.45, 4.6 + k * 1.4); }
 }
 
@@ -1626,7 +1626,7 @@ class PlugPanel {
     const q = this.group.getWorldQuaternion(new Q()); b.position.set(s.world.x, s.world.y, s.world.z); _v4.set(0, 0, 0.04).applyQuaternion(q); b.position.x += _v4.x; b.position.y += _v4.y; b.position.z += _v4.z; b.quaternion.set(q.x, q.y, q.z, q.w);
     this.plugged = s; this.node.chipType = s.type; synth.play('plug', 1, 1, s.world);
     if (this.station.checkTarget()) { this.locked = true; setLamp(this.okLamp, true); synth.play('magic', 0.6, 1, s.world); if (this.station.onLock) this.station.onLock(); }
-    else if (this.keepWrong) { synth.play('spark', 0.5, 1.3, s.world); this.station.msg = [`Porta ${s.type}: prova i piatti e guarda la colonna OK`, CSS_WAIT]; if (this.station.onWrong) this.station.onWrong(s.type); }
+    else if (this.keepWrong) { synth.play('spark', 0.5, 1.3, s.world); this.station.msg = [`Porta ${s.type}: confronta le due lampade e la colonna OK`, CSS_WAIT]; if (this.station.onWrong) this.station.onWrong(s.type); }
     else { synth.play('spark', 0.9, 1, s.world); setTimeout(() => synth.play('error', 0.7, 1, s.world), 300); this.ejectT = 1.4; this.station.msg = ['✗ Porta sbagliata: guarda la colonna OK', CSS_FALSE]; if (this.station.onWrong) this.station.onWrong(s.type); }
   }
   detach(plug) { if (!this.plugged) return; this.plugged = null; this.node.chipType = null; this.ejectT = 0; plug.state = 'free'; plug.makeDynamic(); }
@@ -1673,9 +1673,8 @@ class Board {
     this.W = 2048; this.H = 1152; this.c = mkCanvas(this.W, this.H); this.g = this.c.getContext('2d');
     this.bg = mkCanvas(this.W, this.H); const b = this.bg.getContext('2d');
     const gr = b.createRadialGradient(this.W / 2, this.H / 2, 100, this.W / 2, this.H / 2, this.W * 0.7); gr.addColorStop(0, '#244a36'); gr.addColorStop(1, '#14301f'); b.fillStyle = gr; b.fillRect(0, 0, this.W, this.H);
-    for (let k = 0; k < 40; k++) { b.fillStyle = `rgba(255,255,255,${rnd(0.01, 0.03)})`; b.beginPath(); b.ellipse(rnd(0, this.W), rnd(0, this.H), rnd(80, 300), rnd(20, 80), rnd(0, 3), 0, TAU); b.fill(); }
-    noiseFill(b, this.W, this.H, 9000, () => '#fff', 0.02, 0.05, 2);
-    this.tex = new THREE.CanvasTexture(this.c); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.anisotropy = 8;
+    for (let k = 0; k < 14; k++) { b.fillStyle = `rgba(255,255,255,${rnd(0.008, 0.016)})`; b.beginPath(); b.ellipse(rnd(0, this.W), rnd(0, this.H), rnd(80, 300), rnd(20, 80), rnd(0, 3), 0, TAU); b.fill(); }
+    this.tex = new THREE.CanvasTexture(this.c); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.anisotropy = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 8;
     this.group = new THREE.Group(); this.group.userData.dynamic = true; factoryGroup.add(this.group);
     addMesh(this.group, rbox(2.22, 1.34, 0.06, 0.04), MAT.red, 0, 0, -0.03); addMesh(this.group, rbox(2.12, 1.24, 0.07, 0.03), MAT.gold, 0, 0, -0.035);
     for (const [x, y] of [[-1.08, 0.64], [1.08, 0.64]]) { addMesh(this.group, fluffyTorus(0.12, 0.04, 0.4, 7), MAT.holly, x, y, 0.02); for (let k = 0; k < 3; k++) addMesh(this.group, new THREE.SphereGeometry(0.022, 8, 6), MAT.berry, x + (k - 1) * 0.03, y - 0.1, 0.06); }
@@ -1683,7 +1682,7 @@ class Board {
     for (const x of [-0.9, 0.9]) addMesh(this.group, new THREE.CylinderGeometry(0.008, 0.008, 3, 6), MAT.gold, x, 2.1, -0.03);
     this.key = '';
   }
-  place(st) { const p = st.boardPose; st.frame.updateMatrixWorld(true); st.frame.localToWorld(this.group.position.copy(p.pos)); this.group.rotation.y = st.frame.rotation.y + p.ry; this.key = ''; }
+  place(st) { const p = st.boardPose; st.frame.updateMatrixWorld(true); st.frame.localToWorld(this.group.position.copy(p.pos)); this.group.rotation.y = st.frame.rotation.y + p.ry; this.group.scale.setScalar(p.scale || 1.15); this.key = ''; }
   wrap(text, x, y, maxW, lh, maxLines = 99) { const g = this.g, words = text.split(' '); let line = '', yy = y, n = 0; for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, yy); line = w; yy += lh; if (++n >= maxLines) return yy; } else line = t; } if (line) g.fillText(line, x, yy); return yy + lh; }
   drawExpression(tokens, x, y, maxW) {
     const g = this.g; let fs = 84, total; const measure = () => { total = 0; for (const tk of tokens) { g.font = `900 ${fs}px ${FONT}`; if (tk.isVar) { total += g.measureText(tk.t).width; g.font = `900 ${fs * 0.5}px ${FONT}`; total += g.measureText('0').width + 8; } else total += g.measureText(tk.t).width; } };
@@ -1705,39 +1704,51 @@ class Board {
     const a = outPt(st.root), yv = st.output.value; g.strokeStyle = yv ? CSS_TRUE : CSS_FALSE; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(x0 + w - 60, a.y); g.stroke();
     g.fillStyle = yv ? CSS_TRUE : CSS_FALSE; g.beginPath(); g.arc(x0 + w - 36, a.y, 30, 0, TAU); g.fill(); g.fillStyle = '#10201a'; g.fillText('Y', x0 + w - 36, a.y + 2);
   }
+  // lavagna semplice e leggibile: a sinistra cosa fare e lo stato, a destra la tabella di verità
   update(st, game, force) {
-    const key = [st.idx, st.names.map(n => st.inputs[n].value ? 1 : 0).join(''), st.output.value, st.solved, Math.floor(st.holdT * 20), st.root.chipType || '-', st.msg ? st.msg[0] : '', game.phase].join('|');
+    const key = [st.idx, st.names.map(n => st.inputs[n].value ? 1 : 0).join(''), st.output.value, st.solved, Math.floor(st.holdT * 10), st.root.chipType || '-', st.msg ? st.msg[0] : '', game.phase].join('|');
     if (key === this.key && !force) return; this.key = key;
     const g = this.g, W = this.W, H = this.H, C = st.cfg; g.drawImage(this.bg, 0, 0);
-    g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillStyle = '#ffe08a'; g.font = `900 56px ${ROUNDF}`; g.fillText(`${st.idx + 1} · ${C.title}`, 40, 62);
-    for (let k = 0; k < 7; k++) { const done = stations[k] && stations[k].solved; g.fillStyle = done ? CSS_TRUE : k === st.idx ? CSS_WAIT : 'rgba(255,255,255,0.18)'; g.beginPath(); g.arc(W - 440 + k * 60, 62, 22, 0, TAU); g.fill(); g.fillStyle = '#10201a'; g.font = `900 22px ${FONT}`; g.textAlign = 'center'; g.fillText(STATIONS_CFG[k].gate, W - 440 + k * 60, 63); g.textAlign = 'left'; }
-    g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 3; g.beginPath(); g.moveTo(40, 108); g.lineTo(W - 40, 108); g.stroke();
-    g.textBaseline = 'alphabetic'; g.font = `600 40px ${FONT}`; g.fillStyle = '#eef3ea'; let y = this.wrap(C.task, 40, 165, 1150, 48, 3);
-    g.font = `700 36px ${FONT}`; st.names.forEach((n, k) => { const v = st.inputs[n].value, cx = 40 + (k % 2) * 580, cy = y + Math.floor(k / 2) * 46; g.fillStyle = v ? CSS_TRUE : CSS_FALSE; g.fillText(`${n} = ${v ? 1 : 0}`, cx, cy); g.fillStyle = '#cfe0d5'; g.fillText(C.desc[n], cx + 140, cy); });
-    y += Math.ceil(st.names.length / 2) * 46 + 4;
-    g.fillStyle = 'rgba(0,0,0,0.22)'; roundRect(g, 30, y, 1160, 130, 22); g.fill();
-    const hasY = !(C.plug && !st.root.chipType); this.drawExpression([{ t: 'Y = ', op: true }, ...st.output.tokens()], 50, y + 95, 1120); y += 145;
-    const yv = st.output.value, col = !hasY ? CSS_WAIT : yv ? CSS_TRUE : CSS_FALSE; g.lineWidth = 9; g.strokeStyle = col; roundRect(g, 30, y, 1160, 150, 26); g.stroke();
-    g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `900 104px ${FONT}`; g.fillText(!hasY ? 'Y = ?' : yv ? 'Y = 1  ✓' : 'Y = 0  ✗', 610, y + 78); y += 165;
-    if (C.hold) { const p = Math.min(1, st.holdT / C.hold); g.fillStyle = 'rgba(0,0,0,0.3)'; roundRect(g, 30, y, 1160, 50, 25); g.fill(); if (p > 0) { g.fillStyle = CSS_TRUE; roundRect(g, 30, y, Math.max(50, 1160 * p), 50, 25); g.fill(); } g.fillStyle = '#fff'; g.font = `800 34px ${FONT}`; g.fillText(`Serratura: ${Math.min(st.holdT, C.hold).toFixed(1)} / ${C.hold.toFixed(1)} s`, 610, y + 27); y += 62; }
-    if (st.msg) { g.fillStyle = st.msg[1]; g.font = `900 46px ${ROUNDF}`; g.textAlign = 'center'; g.fillText(st.msg[0], 610, Math.min(H - 40, y + 34)); }
-    // colonna destra: porta, circuito vivo, tabella di verità
-    const rx = 1240, rw = 770; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#ffe08a'; g.font = `900 38px ${ROUNDF}`; g.fillText(`Porta ${C.gate}: ${GATE_INFO[C.gate]}`.slice(0, 64), rx, 150);
-    g.font = `600 30px ${FONT}`; g.fillStyle = '#dfe9e2'; this.wrap(GATE_INFO[C.gate], rx, 190, rw, 34, 2);
-    g.fillStyle = 'rgba(0,0,0,0.18)'; roundRect(g, rx - 10, 225, rw + 20, 300, 20); g.fill();
-    this.drawCircuit(st, rx, 235, rw, 280);
-    const rows = st.truthRows(), cols = [...st.names, 'Y']; if (C.target) cols.push('OBIETT.', 'OK');
-    const ty0 = 545, rh = Math.min(70, (H - ty0 - 18) / (rows.length + 1)), cw = rw / cols.length;
-    g.textAlign = 'center'; g.font = `900 ${Math.min(40, rh * 0.6, cw * 0.32)}px ${FONT}`; g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(rx, ty0, rw, rh);
-    cols.forEach((c, i) => { g.fillStyle = c === 'Y' ? '#ffe08a' : '#fff'; g.fillText(c, rx + cw * (i + 0.5), ty0 + rh / 2); });
-    const cur = st.names.map(n => st.inputs[n].value ? 1 : 0).join('');
+    const plugMissing = C.plug && !st.root.chipType, yv = st.output.value;
+    // intestazione
+    g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillStyle = '#ffe08a'; g.font = `900 64px ${ROUNDF}`; g.fillText(`${st.idx + 1}. ${C.title}`, 44, 66);
+    g.font = `800 40px ${FONT}`; g.fillStyle = '#ffffff'; g.textAlign = 'right'; g.fillText(`porta ${C.gate}`, W - 470, 68);
+    for (let k = 0; k < 7; k++) { const done = stations[k] && stations[k].solved; g.fillStyle = done ? CSS_TRUE : k === st.idx ? CSS_WAIT : 'rgba(255,255,255,0.2)'; g.beginPath(); g.arc(W - 400 + k * 58, 66, 24, 0, TAU); g.fill(); g.fillStyle = '#10201a'; g.font = `900 24px ${FONT}`; g.textAlign = 'center'; g.fillText(String(k + 1), W - 400 + k * 58, 68); }
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(40, 120, W - 80, 4);
+    // ---- colonna sinistra
+    const LX = 44, LW = 1060; let y = 170;
+    g.textAlign = 'left'; g.fillStyle = '#ffe08a'; g.font = `900 50px ${ROUNDF}`; g.fillText('COSA DEVI FARE', LX, y); y += 58;
+    const steps = C.steps || [C.task];
+    steps.forEach((t, k) => { g.fillStyle = '#ffe08a'; g.beginPath(); g.arc(LX + 24, y + 4, 24, 0, TAU); g.fill(); g.fillStyle = '#10201a'; g.font = `900 32px ${FONT}`; g.textAlign = 'center'; g.fillText(String(k + 1), LX + 24, y + 6); g.textAlign = 'left'; g.fillStyle = '#ffffff'; g.font = `700 40px ${FONT}`; y = this.wrap(t, LX + 66, y + 4, LW - 70, 46, 2) + 8; });
+    y += 6;
+    if (C.key === 'gate') {
+      const A = st.inputs.A.value, B = st.inputs.B.value, Cc = st.inputs.C.value, D = st.inputs.D.value;
+      [[A !== B, 'A e B diversi (solo uno dei due)'], [Cc || D, 'almeno uno tra C e D'], [!(A && D), 'MAI A e D insieme']].forEach(([ok, txt]) => { g.fillStyle = ok ? CSS_TRUE : CSS_FALSE; g.font = `900 44px ${FONT}`; g.fillText(ok ? '✓' : '✗', LX + 10, y); g.fillStyle = '#ffffff'; g.font = `700 40px ${FONT}`; g.fillText(txt, LX + 66, y); y += 52; });
+      y += 4;
+    }
+    // ingressi come grandi gettoni colorati
+    const n = st.names.length, cw = Math.min(250, (LW - 20) / n);
+    st.names.forEach((nm, k) => { const v = st.inputs[nm].value, x = LX + k * cw; g.fillStyle = v ? 'rgba(0,255,127,0.18)' : 'rgba(255,30,30,0.18)'; roundRect(g, x, y, cw - 16, 124, 22); g.fill(); g.lineWidth = 6; g.strokeStyle = v ? CSS_TRUE : CSS_FALSE; g.stroke(); g.fillStyle = v ? CSS_TRUE : CSS_FALSE; g.textAlign = 'center'; g.font = `900 62px ${FONT}`; g.fillText(`${nm} = ${v ? 1 : 0}`, x + (cw - 16) / 2, y + 48); g.fillStyle = '#e8f0ea'; g.font = `700 26px ${FONT}`; g.fillText(C.desc[nm].slice(0, 22), x + (cw - 16) / 2, y + 100); });
+    y += 146; g.textAlign = 'left';
+    // risultato
+    const col = plugMissing ? CSS_WAIT : yv ? CSS_TRUE : CSS_FALSE; g.lineWidth = 10; g.strokeStyle = col; g.fillStyle = 'rgba(0,0,0,0.25)'; roundRect(g, LX, y, LW - 20, 150, 28); g.fill(); g.stroke();
+    g.fillStyle = col; g.textAlign = 'center'; g.font = `900 100px ${FONT}`; g.fillText(plugMissing ? 'Y = ?' : yv ? 'Y = 1  ✓' : 'Y = 0  ✗', LX + (LW - 20) / 2, y + 80); y += 172;
+    g.font = `800 44px ${FONT}`; g.fillStyle = '#cfe0d5'; g.fillText('Y = ' + st.output.tokens().map(t => t.t).join('').replace(/\s+/g, ' ').trim(), LX + (LW - 20) / 2, y); y += 56;
+    if (C.hold) { const p = Math.min(1, st.holdT / C.hold); g.fillStyle = 'rgba(0,0,0,0.3)'; roundRect(g, LX, y, LW - 20, 52, 26); g.fill(); if (p > 0) { g.fillStyle = CSS_TRUE; roundRect(g, LX, y, Math.max(52, (LW - 20) * p), 52, 26); g.fill(); } g.fillStyle = '#fff'; g.font = `800 34px ${FONT}`; g.fillText(`Serratura: ${Math.min(st.holdT, C.hold).toFixed(1)} / ${C.hold.toFixed(1)} s`, LX + (LW - 20) / 2, y + 28); y += 66; }
+    if (st.msg && y < H - 30) { g.fillStyle = st.msg[1]; g.font = `900 46px ${ROUNDF}`; this.wrap(st.msg[0], LX + (LW - 20) / 2, Math.min(H - 40, y + 10), LW - 40, 50, 2); }
+    // ---- colonna destra: tabella di verità
+    const RX = 1150, RW = W - RX - 44; g.textAlign = 'left'; g.fillStyle = '#ffe08a'; g.font = `900 50px ${ROUNDF}`; g.fillText('TABELLA DI VERITÀ', RX, 170);
+    g.fillStyle = '#ffffff'; g.font = `700 36px ${FONT}`; const ty = this.wrap(GATE_INFO[C.gate], RX, 222, RW, 42, 2) + 4;
+    const rows = st.truthRows(), cols = [...st.names, 'Y']; if (C.target) cols.push('OBIETTIVO', 'OK');
+    const rh = Math.min(84, (H - ty - 24) / (rows.length + 1)), cwid = RW / cols.length, cur = st.names.map(nm => st.inputs[nm].value ? 1 : 0).join('');
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(RX, ty, RW, rh); g.textAlign = 'center';
+    cols.forEach((c, i) => { g.fillStyle = c === 'Y' ? '#ffe08a' : '#ffffff'; g.font = `900 ${Math.min(44, rh * 0.55, cwid * (c.length > 3 ? 0.17 : 0.4))}px ${FONT}`; g.fillText(c, RX + cwid * (i + 0.5), ty + rh / 2); });
     rows.forEach((r, k) => {
-      const yy = ty0 + rh * (k + 1), active = r.bits.join('') === cur; g.fillStyle = active ? 'rgba(255,255,255,0.16)' : (k % 2 ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.04)'); g.fillRect(rx, yy, rw, rh);
-      if (active) { g.lineWidth = 5; g.strokeStyle = '#ffe08a'; g.strokeRect(rx + 3, yy + 3, rw - 6, rh - 6); }
-      g.font = `900 ${Math.min(44, rh * 0.66)}px ${FONT}`; const cells = r.bits.map(b => ({ s: String(b), c: b ? CSS_TRUE : CSS_FALSE }));
-      cells.push(hasY ? { s: r.y ? '1' : '0', c: r.y ? CSS_TRUE : CSS_FALSE } : { s: '?', c: CSS_WAIT });
-      if (C.target) { cells.push({ s: r.tgt ? '1' : '0', c: r.tgt ? CSS_TRUE : CSS_FALSE }); cells.push(hasY ? (r.y === r.tgt ? { s: '✓', c: CSS_TRUE } : { s: '✗', c: CSS_FALSE }) : { s: '–', c: '#889' }); }
-      cells.forEach((cell, i) => { g.fillStyle = cell.c; g.fillText(cell.s, rx + cw * (i + 0.5), yy + rh / 2 + 2); });
+      const yy = ty + rh * (k + 1), active = r.bits.join('') === cur; g.fillStyle = active ? 'rgba(255,224,138,0.22)' : (k % 2 ? 'rgba(0,0,0,0.16)' : 'rgba(0,0,0,0.05)'); g.fillRect(RX, yy, RW, rh);
+      if (active) { g.lineWidth = 6; g.strokeStyle = '#ffe08a'; g.strokeRect(RX + 3, yy + 3, RW - 6, rh - 6); g.fillStyle = '#ffe08a'; g.font = `900 ${rh * 0.5}px ${FONT}`; g.textAlign = 'right'; g.fillText('ORA ▶', RX - 10, yy + rh / 2); g.textAlign = 'center'; }
+      const cells = r.bits.map(b => ({ s: String(b), c: b ? CSS_TRUE : CSS_FALSE })); cells.push(plugMissing ? { s: '?', c: CSS_WAIT } : { s: r.y ? '1' : '0', c: r.y ? CSS_TRUE : CSS_FALSE });
+      if (C.target) { cells.push({ s: r.tgt ? '1' : '0', c: r.tgt ? CSS_TRUE : CSS_FALSE }); cells.push(plugMissing ? { s: '–', c: '#99a' } : r.y === r.tgt ? { s: '✓', c: CSS_TRUE } : { s: '✗', c: CSS_FALSE }); }
+      g.font = `900 ${Math.min(56, rh * 0.68)}px ${FONT}`; cells.forEach((cell, i) => { g.fillStyle = cell.c; g.fillText(cell.s, RX + cwid * (i + 0.5), yy + rh / 2 + 2); });
     });
     this.tex.needsUpdate = true;
   }
@@ -1958,7 +1969,7 @@ class Station {
     this.names = Object.keys(C.inputs); this.inputs = {}; this.names.forEach(n => { this.inputs[n] = new InputNode(n, C.inputs[n]); });
     this.root = C.build(this.inputs); this.output = new OutputNode(this.root);
     this.solved = false; this.holdT = 0; this.quickT = 0; this.run = 0; this.msg = null; this.devs = [];
-    this.elfLocal = new V3(-1.25, 0, -0.95); this.compLocal = [new V3(1.3, 0, -0.25), new V3(1.65, 0, 0.4)]; this.boardPose = { pos: new V3(0, 2.6, -3.1), ry: 0 };
+    this.elfLocal = new V3(-1.0, 0, -0.5); this.compLocal = [new V3(1.0, 0, -0.5), new V3(-1.5, 0, -0.85)]; this.boardPose = { pos: new V3(0, 2.6, -3.1), ry: 0 };
     STATIC_FOOT.on = true; STATIC_FOOT.list = []; BUILDERS[C.key](this); STATIC_FOOT.on = false;
     this.frame.updateMatrixWorld(true);
     for (const b of STATIC_FOOT.list) NAV.factory.push({ obb: true, ...b });
@@ -1966,7 +1977,7 @@ class Station {
     stations.push(this);
   }
   L(x, y, z) { return this.frame.localToWorld(new V3(x, y, z)); }
-  pose() { return { x: this.frame.position.x, z: this.frame.position.z, yaw: this.yaw }; }
+  pose(kind = 'work') { const p = this.L(0, 0, kind === 'wide' ? 1.0 : 0.12); return { x: p.x, z: p.z, yaw: this.yaw }; }
   dev(d) { d.group.userData.dynamic = true; this.devs.push(d); return d; }
   truthRows() {
     const N = this.names.length, save = this.names.map(n => this.inputs[n].value), rows = [];
@@ -2157,7 +2168,7 @@ const BUILDERS = {
     const tun = textSign(['INCARTATRICE'], 0.62, 0.14, { w: 640, h: 144 }); tun.position.set(0, 1.4, -1.2); F.add(tun);
     for (let k = 0; k < 5; k++) { const ar = addMesh(F, new THREE.ConeGeometry(0.035, 0.09, 3), MAT.gold, -1.3 + k * 0.62, 0.87, -1.12, 0, 0, -Math.PI / 2); ar.scale.z = 0.3; }
     st.keyTips = [-0.55, 0.55].map(x => { const t = new TextSprite('↻ GIRA', { size: 0.045, w: 256, h: 96, color: '#ffe08a' }); t.sprite.position.set(x, 1.38, -0.55); st.dyn.add(t.sprite); return t; });
-    st.elfLocal = new V3(-1.05, 0, -0.45); st.compLocal = [new V3(1.05, 0, -0.45), new V3(1.6, 0, 0.3)];
+    st.elfLocal = new V3(-1.05, 0, -0.45); st.compLocal = [new V3(1.05, 0, -0.45), new V3(-1.6, 0, -0.85)];
     st.loop = 'beltLoop';
     st.fx = (dt, t) => {
       const v = st.run * 0.45; st.belt += v * dt; st.beltTex.offset.x = -st.belt / 3.1 * 6;
@@ -2198,50 +2209,40 @@ const BUILDERS = {
   },
   // 6 · bilancia dei regali: pulsanti + spinotto da collegare (XNOR)
   scale(st) {
-    // tutto a portata di mano: bilancia sul banco davanti a te, pannello delle prese su un leggio a sinistra,
-    // due pacchi veri da appoggiare sui piatti (A = piatto sinistro, B = piatto destro)
+    // Un solo gesto: infilare lo spinotto. La bilancia prova DA SOLA le 4 combinazioni (pacchi che compaiono e
+    // spariscono sui piatti) e accanto alla lampada della tua porta c'è la lampada OBIETTIVO da confrontare.
     const F = st.frame; consoleDesk(st, 1.6);
-    const S = new THREE.Group(); S.position.set(0, 0.865, -0.66); F.add(S);
+    const SX = -0.32, SZ = -0.66;
+    const S = new THREE.Group(); S.position.set(SX, 0.865, SZ); F.add(S);
     addMesh(S, rbox(0.34, 0.05, 0.2, 0.02), MAT.gold, 0, 0.025, 0); addMesh(S, new THREE.CylinderGeometry(0.025, 0.035, 0.5, 16), MAT.gold, 0, 0.28, 0); addMesh(S, new THREE.SphereGeometry(0.045, 16, 12), MAT.gold, 0, 0.54, 0);
-    addMesh(S, starGeo(0.05, 0.015), MAT.gold, 0, 0.62, 0);
-    st.beam = new THREE.Group(); st.beam.position.set(0, 1.405, -0.66); st.dyn.add(st.beam); addMesh(st.beam, rbox(0.82, 0.03, 0.04, 0.012), MAT.gold, 0, 0, 0); for (const sx of [-1, 1]) addMesh(st.beam, new THREE.SphereGeometry(0.022, 12, 8), MAT.gold, sx * 0.4, 0, 0);
-    st.needle = addMesh(st.beam, new THREE.ConeGeometry(0.015, 0.16, 8), MAT.red, 0, 0.09, 0.025);
-    st.plates = [-1, 1].map(sx => { const p = new THREE.Group(); st.dyn.add(p); addMesh(p, new THREE.CylinderGeometry(0.15, 0.12, 0.022, 32), MAT.gold, 0, 0, 0); for (let k = 0; k < 3; k++) { const a = k / 3 * TAU; addMesh(p, new THREE.CylinderGeometry(0.003, 0.003, 0.27, 4), MAT.gold, Math.cos(a) * 0.065, 0.135, Math.sin(a) * 0.065, Math.sin(a) * 0.23, 0, -Math.cos(a) * 0.23); } return { p, sx, item: null, world: new V3() }; });
-    st.slots = st.plates.map((q, k) => ({ q, k, item: null, locked: false, detach(p) { if (this.item === p) this.item = null; p.state = 'free'; p.makeDynamic(); } }));
-    st.lblA = inputLabel(st.dyn, st.inputs.A, 'Piatto sinistro', -0.42, 1.68, -0.62); st.lblB = inputLabel(st.dyn, st.inputs.B, 'Piatto destro', 0.42, 1.68, -0.62);
-    st.okSign = new TextSprite('INFILA LO SPINOTTO', { size: 0.075, w: 768, h: 128, color: CSS_WAIT }); st.okSign.sprite.position.set(0, 1.86, -0.66); st.dyn.add(st.okSign.sprite);
-    st.bulbMat = new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0x000000, emissiveIntensity: 2, toneMapped: false }); addMesh(st.dyn, new THREE.SphereGeometry(0.05, 20, 14), st.bulbMat, 0, 1.76, -0.66);
-    // due pacchi veri, appoggiati sul banco
-    st.gifts = [0, 1].map(k => { const m = giftBox(0.13, 0.12, 0.13, k + 2, k + 1); const p = new Prop({ name: 'Pacco', mesh: m, half: [0.065, 0.06, 0.065], mass: 0.3, sound: 'soft', area: 'factory', home: { pos: st.L(k ? 0.68 : -0.68, 0.93, -0.5), quat: new Q().setFromEuler(new THREE.Euler(0, st.yaw, 0)) }, respawn: 4 }); p.onClick = () => { const sl = st.slots.find(s => s.item === p); if (sl) { sl.detach(p); p.respawnHome(false); } else { const free = st.slots.find(s => !s.item); if (free) putOnPlate(st, p, free); } }; return p; });
-    // leggio con il pannello delle prese e la mensola dello spinotto
-    addMesh(F, new THREE.CylinderGeometry(0.03, 0.05, 1.05, 12), MAT.darkWood, -1.2, 0.52, -0.68); addMesh(F, rbox(0.62, 0.04, 0.36, 0.02), MAT.wood, -1.12, 0.84, -0.5, 0, 0.6, 0); addStaticLocal(F, -1.12, 0.84, -0.5, 0.31, 0.02, 0.18, 0.6);
-    addMesh(F, rbox(0.72, 0.46, 0.05, 0.03), MAT.darkWood, -1.15, 1.16, -0.66, 0, 0.6, 0);
-    st.panel = new PlugPanel(F, new V3(-1.12, 1.18, -0.62), st.root, st); st.panel.group.rotation.y = 0.6; st.panel.group.userData.dynamic = true; st.panel.keepWrong = true; st.panel.homeWorld = st.L(-1.08, 0.9, -0.44);
-    const help = textSign(['① Spinotto nella presa', '② Pacchi sui piatti', '③ Lampada accesa solo se UGUALI'], 0.62, 0.3, { w: 768, h: 372, bg: '#1f5a3a', fg: '#fff4e0' }); help.position.set(1.12, 1.15, -0.62); help.rotation.y = -0.6; F.add(help);
-    addMesh(F, new THREE.CylinderGeometry(0.03, 0.05, 1.0, 12), MAT.darkWood, 1.12, 0.5, -0.66); addStaticLocal(F, 1.12, 0.5, -0.66, 0.05, 0.5, 0.05);
+    st.beam = new THREE.Group(); st.beam.position.set(SX, 1.405, SZ); st.dyn.add(st.beam); addMesh(st.beam, rbox(0.82, 0.03, 0.04, 0.012), MAT.gold, 0, 0, 0); for (const sx of [-1, 1]) addMesh(st.beam, new THREE.SphereGeometry(0.022, 12, 8), MAT.gold, sx * 0.4, 0, 0);
+    st.plates = [-1, 1].map((sx, k) => { const p = new THREE.Group(); st.dyn.add(p); addMesh(p, new THREE.CylinderGeometry(0.15, 0.12, 0.022, 32), MAT.gold, 0, 0, 0); for (let j = 0; j < 3; j++) { const a = j / 3 * TAU; addMesh(p, new THREE.CylinderGeometry(0.003, 0.003, 0.27, 4), MAT.gold, Math.cos(a) * 0.065, 0.135, Math.sin(a) * 0.065, Math.sin(a) * 0.23, 0, -Math.cos(a) * 0.23); } const gift = giftBox(0.15, 0.13, 0.15, k + 2, k + 1); gift.position.y = 0.077; p.add(gift); const tag = new TextSprite(k ? 'B' : 'A', { size: 0.07, w: 128, h: 128 }); tag.sprite.position.set(0, -0.09, 0.16); p.add(tag.sprite); return { p, sx, gift, tag, s: 0 }; });
+    // due lampade da confrontare: cosa DEVE succedere e cosa fa la TUA porta
+    const lampAt = (x, label) => { addMesh(st.dyn, new THREE.CylinderGeometry(0.05, 0.06, 0.04, 20), MAT.gold, x, 1.62, SZ); const m = new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0x000000, emissiveIntensity: 2.2, toneMapped: false }); addMesh(st.dyn, new THREE.SphereGeometry(0.065, 24, 16), m, x, 1.7, SZ); const t = new TextSprite(label, { size: 0.05, w: 512, h: 96, color: '#ffe8c0' }); t.sprite.position.set(x, 1.83, SZ); st.dyn.add(t.sprite); return m; };
+    st.goalLamp = lampAt(SX - 0.32, 'OBIETTIVO'); st.yLamp = lampAt(SX + 0.32, 'LA TUA PORTA (Y)');
+    st.verdict = new TextSprite('', { size: 0.07, w: 1024, h: 128, color: CSS_WAIT }); st.verdict.sprite.position.set(SX, 1.98, SZ); st.dyn.add(st.verdict.sprite);
+    st.combo = new TextSprite('', { size: 0.05, w: 768, h: 96, color: '#ffffff' }); st.combo.sprite.position.set(SX, 1.12, SZ + 0.2); st.dyn.add(st.combo.sprite);
+    // pannello delle prese sul banco, a destra, con lo spinotto appoggiato davanti
+    addMesh(F, rbox(0.7, 0.46, 0.05, 0.03), MAT.darkWood, 0.45, 1.13, -0.8);
+    st.panel = new PlugPanel(F, new V3(0.45, 1.15, -0.76), st.root, st); st.panel.group.userData.dynamic = true; st.panel.keepWrong = true; st.panel.homeWorld = st.L(0.3, 0.92, -0.5);
+    const arrow = new TextSprite('▼ SPINOTTO', { size: 0.05, w: 384, h: 96, color: '#ffe08a' }); arrow.sprite.position.set(0.3, 1.02, -0.5); st.dyn.add(arrow.sprite); st.arrow = arrow;
     st.boardPose = { pos: new V3(0, 2.55, -2.3), ry: 0 };
-    const giveBack = () => { st.slots.forEach(sl => { if (sl.item) { const p = sl.item; sl.detach(p); p.respawnHome(false); } }); };
-    st.preEval = () => { st.inputs.A.value = !!st.slots[0].item; st.inputs.B.value = !!st.slots[1].item; };
-    // "dispositivi" virtuali per tastiera, aiuto e salti del docente: mettono o tolgono un pacco dal piatto
-    st.slots.forEach((sl, k) => st.dev({ node: st.inputs[k ? 'B' : 'A'], group: new THREE.Group(),
-      sync() { const want = this.node.value; if (want && !sl.item) { const g = st.gifts.find(p => !st.slots.some(o => o.item === p)); if (g) putOnPlate(st, g, sl); } else if (!want && sl.item) { const p = sl.item; sl.detach(p); p.respawnHome(false); } },
-      click() { if (sl.item) { const p = sl.item; sl.detach(p); p.respawnHome(false); } else { const g = st.gifts.find(p => !st.slots.some(o => o.item === p)); if (g) putOnPlate(st, g, sl); } } }));
-    st.onReset = () => { giveBack(); st.panel.reset(); };
-    st.onWrong = type => { const e = elves[5]; if (!e || !e.root.visible) return; const rows = st.truthRows(), bad = rows.find(r => r.y !== r.tgt); const txt = bad ? `Con la ${type}, se A = ${bad.bits[0]} e B = ${bad.bits[1]} la lampada ${bad.y ? 'si accende' : 'resta spenta'}… ma i piatti ${bad.tgt ? 'sono uguali' : 'sono diversi'}! Sfila lo spinotto e prova un'altra presa.` : 'Uhm, riprova!'; e.say(txt, 8); e.setMode('wave', 1.5); };
-    st.onLock = () => { const e = elves[5]; if (e && e.root.visible && !(st.inputs.A.value && st.inputs.B.value)) { e.say('Sì! Questa è la porta giusta! Adesso metti un pacco su OGNI piatto per pesarli insieme.', 6); e.setMode('cheer', 2); } };
-    st.onSolvedQuiet = () => { const s = st.panel.sockets.find(q => q.type === 'XNOR'); if (!st.panel.plugged) st.panel.insert(st.panel.plug, s); st.slots.forEach(sl => { if (!sl.item) { const g = st.gifts.find(p => !st.slots.some(o => o.item === p)); if (g) putOnPlate(st, g, sl); } }); };
+    st.cycleT = 0; st.comboIdx = 0;
+    st.preEval = () => { const c = st.solved ? 3 : st.comboIdx; st.inputs.A.value = !!(c & 2); st.inputs.B.value = !!(c & 1); };
+    st.onReset = () => { st.panel.reset(); st.cycleT = 0; st.comboIdx = 0; };
+    st.onWrong = type => { const e = elves[5]; if (!e || !e.root.visible) return; const rows = st.truthRows(), bad = rows.find(r => r.y !== r.tgt); const txt = bad ? `Hai collegato la ${type}. Guarda la riga A = ${bad.bits[0]}, B = ${bad.bits[1]}: i piatti sono ${bad.tgt ? 'UGUALI' : 'DIVERSI'}, ma la tua lampada ${bad.y ? 'si accende' : 'resta spenta'}. Sfila lo spinotto e prova un'altra presa!` : 'Uhm, riprova!'; e.say(txt, 9); e.setMode('wave', 1.5); };
+    st.onSolvedQuiet = () => { const s = st.panel.sockets.find(q => q.type === 'XNOR'); if (!st.panel.plugged) st.panel.insert(st.panel.plug, s); };
     st.fx = (dt, t) => {
       st.panel.update(dt);
-      const tilt = ((st.inputs.A.value ? 1 : 0) - (st.inputs.B.value ? 1 : 0)) * 0.22; st.beam.rotation.z += (tilt - st.beam.rotation.z) * Math.min(1, dt * 3); st.beam.updateMatrixWorld(true);
-      st.plates.forEach(q => { st.beam.localToWorld(_v4.set(q.sx * 0.4, 0, 0)); q.world.copy(_v4).setY(_v4.y - 0.27); st.dyn.worldToLocal(_v5.copy(q.world)); q.p.position.copy(_v5); });
-      // un pacco lasciato vicino a un piatto ci si appoggia sopra
-      for (const g of st.gifts) { if (g.state !== 'free') continue; const b = g.body; for (const sl of st.slots) { if (sl.item) continue; const w = sl.q.world, dx = b.position.x - w.x, dz = b.position.z - w.z, dy = b.position.y - w.y; if (dx * dx + dz * dz < 0.15 * 0.15 && dy > -0.06 && dy < 0.35) { putOnPlate(st, g, sl); synth.play('soft', 0.8, 0.9, w); break; } } }
-      for (const sl of st.slots) if (sl.item) { const b = sl.item.body, w = sl.q.world; b.position.set(w.x, w.y + 0.072, w.z); b.velocity.setZero(); }
-      st.lblA.update(st.inputs.A.value); st.lblB.update(st.inputs.B.value);
-      const plugged = !!st.root.chipType, y = st.output.value;
-      st.bulbMat.emissive.setHex(!plugged ? 0x000000 : y ? COL_TRUE : COL_FALSE);
-      st.okSign.set(!plugged ? 'INFILA LO SPINOTTO' : y ? 'UGUALI ✓' : 'DIVERSI ✗', !plugged ? CSS_WAIT : y ? CSS_TRUE : CSS_FALSE);
-      if (st.panel.locked && !(st.inputs.A.value && st.inputs.B.value)) st.msg = ['Porta giusta! Ora un pacco su ogni piatto', CSS_WAIT];
+      // ciclo automatico delle combinazioni: 00 → 01 → 10 → 11
+      if (!st.solved) { st.cycleT += dt; if (st.cycleT > 2.4) { st.cycleT = 0; st.comboIdx = (st.comboIdx + 1) % 4; synth.play('soft', 0.6, 0.9, st.L(SX, 1.2, SZ)); } }
+      const A = st.inputs.A.value, B = st.inputs.B.value, plugged = !!st.root.chipType, y = st.output.value, goal = A === B;
+      const tilt = ((A ? 1 : 0) - (B ? 1 : 0)) * 0.22; st.beam.rotation.z += (tilt - st.beam.rotation.z) * Math.min(1, dt * 4); st.beam.updateMatrixWorld(true);
+      st.plates.forEach((q, k) => { st.beam.localToWorld(_v4.set(q.sx * 0.4, 0, 0)); _v4.y -= 0.27; st.dyn.worldToLocal(_v4); q.p.position.copy(_v4); const on = k ? B : A; q.s += ((on ? 1 : 0) - q.s) * Math.min(1, dt * 8); q.gift.scale.setScalar(Math.max(0.001, q.s)); q.gift.visible = q.s > 0.02; });
+      st.goalLamp.emissive.setHex(goal ? COL_TRUE : 0x220000); st.yLamp.emissive.setHex(!plugged ? 0x000000 : y ? COL_TRUE : 0x220000);
+      st.combo.set(`A = ${A ? 1 : 0}   B = ${B ? 1 : 0}   →   piatti ${goal ? 'UGUALI' : 'DIVERSI'}`, '#ffffff');
+      st.verdict.set(!plugged ? 'INFILA LO SPINOTTO ROSSO' : y === goal ? 'LE LAMPADE CONCORDANO ✓' : 'LE LAMPADE NON CONCORDANO ✗', !plugged ? CSS_WAIT : y === goal ? CSS_TRUE : CSS_FALSE);
+      st.arrow.sprite.visible = !plugged && st.panel.plug.state !== 'held'; if (st.arrow.sprite.visible) { st.panel.plug.mesh.getWorldPosition(_v4); st.dyn.worldToLocal(_v4); st.arrow.sprite.position.set(_v4.x, _v4.y + 0.1 + 0.02 * Math.sin(t * 5), _v4.z); }
     };
   },
   // 7 · portone del magazzino: pianoforte gigante (NAND) con serratura a tempo
@@ -2265,7 +2266,7 @@ const BUILDERS = {
     addMesh(wh, new THREE.BoxGeometry(6, 4.2, 6), new THREE.MeshBasicMaterial({ color: 0x5a3a20, side: THREE.BackSide }), 0, 2.1, 0);
     { const n = 90, gb = new THREE.InstancedMesh(rbox(0.4, 0.35, 0.4, 0.05), std(0xffffff, 0.45), n), m4 = new THREE.Matrix4(), c = new THREE.Color(), cols = [0xc8202c, 0x1f6a3a, 0x2b4fa0, 0xf2c45a, 0x7a2a8c, 0xffffff]; srand(12); for (let k = 0; k < n; k++) { const a = sr() * Math.PI, r = srr(0.8, 2.6), h = Math.max(0, 2.2 - r) * srr(0.5, 1.2); m4.compose(new V3(Math.cos(a) * r * 1.1, 0.18 + sr() * h, -Math.sin(a) * r * 0.9 + 0.4), new Q().setFromEuler(new THREE.Euler(0, sr() * 3, 0)), new V3(1, 1, 1)); gb.setMatrixAt(k, m4); gb.setColorAt(k, c.setHex(cols[k % cols.length])); } wh.add(gb); }
     { const p = st.L(0, 2.2, -6.0); st.whLight = addLight(factoryLights, 0xffc070, 0, 8, p.x, p.y, p.z, 1.4); }
-    st.elfLocal = new V3(1.25, 0, -1.0); st.boardPose = { pos: new V3(-2.35, 2.35, -2.3), ry: 0.6 };
+    st.elfLocal = new V3(1.0, 0, -0.55); st.compLocal = [new V3(-1.0, 0, -0.55), new V3(1.5, 0, -1.05)]; st.boardPose = { pos: new V3(-2.35, 2.35, -2.3), ry: 0.6 };
     st.open = 0;
     st.onReset = () => { st.open = 0; };
     st.onSolvedQuiet = () => { st.open = 1; };
@@ -2277,11 +2278,6 @@ const BUILDERS = {
     };
   }
 };
-function putOnPlate(st, p, sl) {
-  if (p.holder) { p.holder.held = null; p.holder = null; } if (p.state === 'socket' && p.socketOwner && p.socketOwner !== sl) p.socketOwner.detach(p);
-  sl.item = p; p.socketOwner = sl; p.state = 'socket'; const b = p.body; b.type = CANNON.Body.KINEMATIC; b.collisionResponse = false; b.velocity.setZero(); b.angularVelocity.setZero();
-  const q = st.frame.getWorldQuaternion(new Q()); b.quaternion.set(q.x, q.y, q.z, q.w);
-}
 function makeCookie(pos, area, hidden = false) {
   const m = new THREE.Group(); const disc = addMesh(m, new THREE.CylinderGeometry(0.045, 0.045, 0.014, 28), [MAT.gingerbread, MAT.cookie, MAT.cookie]); disc.material = [MAT.gingerbread, MAT.cookie, MAT.cookie];
   const bites = []; for (let k = 0; k < 3; k++) { const b = addMesh(m, new THREE.CylinderGeometry(0.022, 0.022, 0.02, 14), std(0x2a1a14, 1), 0.04 * Math.cos(k * 0.9), 0, 0.04 * Math.sin(k * 0.9)); b.visible = false; bites.push(b); }
@@ -2301,11 +2297,12 @@ function makeCookie(pos, area, hidden = false) {
 /* =========================================================
    SQUADRA DELLE RENNE E SLITTA, VOLO FINALE
    ========================================================= */
+const TEAM_X = -2.6;
 const team = { group: new THREE.Group(), deer: [], sleigh: null, state: 'parked', s: 0, v: 0, curve: null, trail: null };
 function buildTeam() {
-  const T = team.group; T.position.set(0, 0, 10); T.userData.dynamic = true; scene.add(T);
+  const T = team.group; T.position.set(TEAM_X, 0, 10); T.userData.dynamic = true; scene.add(T);
   team.sleigh = buildSleigh(); T.add(team.sleigh);
-  team.curve = new THREE.CatmullRomCurve3([new V3(0, 0, 10), new V3(0, 0, 18), new V3(0, 0.6, 25), new V3(1, 4, 34), new V3(8, 11, 44), new V3(24, 19, 46), new V3(40, 27, 28), new V3(42, 35, -6), new V3(18, 42, -34), new V3(-28, 50, -46), new V3(-90, 62, -30)]);
+  team.curve = new THREE.CatmullRomCurve3([[0, 0, 10], [0, 0, 18], [0, 0.6, 25], [1, 4, 34], [8, 11, 44], [24, 19, 46], [40, 27, 28], [42, 35, -6], [18, 42, -34], [-28, 50, -46], [-90, 62, -30]].map(([x, y, z]) => new V3(x + TEAM_X, y, z)));
   { const n = 500, p = new Float32Array(n * 3).fill(-200); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3)); team.trail = new THREE.Points(g, new THREE.PointsMaterial({ map: TEX.sparkle, size: 0.25, color: 0xffe08a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); team.trail.frustumCulled = false; scene.add(team.trail); team.trailI = 0; team.trailLife = new Float32Array(n); team.trailVel = new Float32Array(n * 3); }
   const place = proto => {
     const spots = [[0.55, 2.4], [-0.55, 2.4], [0.55, 4.0], [-0.55, 4.0], [0.55, 5.6], [-0.55, 5.6], [0.55, 7.2], [-0.55, 7.2], [0, 8.8]];
@@ -2319,7 +2316,7 @@ function buildTeam() {
   const tryNext = () => { if (done) return; if (i >= HORSE_URLS.length) { done = true; clearTimeout(fallback); place(null); return; } loader.load(HORSE_URLS[i++], gltf => { if (done) return; done = true; clearTimeout(fallback); const proto = prepareHorse(gltf); place(proto); }, undefined, () => tryNext()); };
 }
 team.takeoff = function () { if (!santa.seat) { const seat = this.sleigh.userData.seat; seat.attach(santa.root); santa.root.position.set(0, 0, 0); santa.root.rotation.set(0, 0, 0); santa.seat = seat; santa.mode = 'sit'; } this.state = 'run'; this.s = 0; this.v = 0; music.play('jingle', 0.4); synth.play('fanfare', 0.7); };
-team.reset = function () { this.state = 'parked'; this.s = 0; this.v = 0; this.group.position.set(0, 0, 10); this.group.rotation.set(0, 0, 0); this.group.visible = true; };
+team.reset = function () { this.state = 'parked'; this.s = 0; this.v = 0; this.group.position.set(TEAM_X, 0, 10); this.group.rotation.set(0, 0, 0); this.group.visible = true; };
 team.update = function (dt, t) {
   if (this.state === 'run') {
     this.v = Math.min(16, this.v + dt * (this.v < 4 ? 1.6 : 3.2)); this.s += this.v * dt; const L = this.curve.getLength(), u = Math.min(1, this.s / L);
@@ -2366,7 +2363,7 @@ function buildProps() {
   { const t = canvasTex(256, 128, (g, w, h) => { const c = ['#c8202c', '#fff', '#2b6fd0', '#fff', '#f2c45a', '#fff']; for (let k = 0; k < 6; k++) { g.fillStyle = c[k]; g.fillRect(k * w / 6, 0, w / 6, h); } }); new Prop({ name: 'Palla', mesh: new THREE.Mesh(new THREE.SphereGeometry(0.09, 28, 18), new THREE.MeshStandardMaterial({ map: t, roughness: 0.3 })), sphere: 0.09, mass: 0.12, sound: 'soft', area: 'factory', home: homeAt(0.25, 0.87, -32.4) }); }
   { const g = new THREE.Group(); addMesh(g, new THREE.CylinderGeometry(0.09, 0.09, 0.11, 24), MAT.red); for (const y of [-0.055, 0.055]) addMesh(g, new THREE.TorusGeometry(0.09, 0.01, 8, 24), MAT.gold, 0, y, 0, Math.PI / 2); addMesh(g, new THREE.CylinderGeometry(0.088, 0.088, 0.005, 24), MAT.cream, 0, 0.057, 0); new Prop({ name: 'Tamburo', mesh: g, half: [0.09, 0.06, 0.09], mass: 0.3, sound: 'wood', area: 'factory', home: homeAt(0.5, 0.84, -32.4) }); }
   // cortile: palle di neve
-  for (let k = 0; k < 4; k++) new Prop({ name: 'Palla di neve', mesh: new THREE.Mesh(fluffy(0.06, 0.1, 4, 16, 12, k), MAT.snow), sphere: 0.06, mass: 0.15, sound: 'snow', area: 'yard', home: homeAt(-2.2 + k * 0.15, 0.06, 10.3 + (k % 2) * 0.12), respawn: 4,
+  for (let k = 0; k < 4; k++) new Prop({ name: 'Palla di neve', mesh: new THREE.Mesh(fluffy(0.06, 0.1, 4, 16, 12, k), MAT.snow), sphere: 0.06, mass: 0.15, sound: 'snow', area: 'yard', home: homeAt(-5.3 + k * 0.15, 0.06, 6.6 + (k % 2) * 0.12), respawn: 4,
     init: p => { p.onCollideOrig = p.onCollide; }, behave: (p, dt) => { if (p.state === 'free' && p.body.velocity.length() > 3) p.flying = true; if (p.flying && p.body.velocity.length() < 0.6) { p.flying = false; bursts.spawn(p.mesh.position, new V3(0, 1, 0), 0xffffff); p.respawnHome(true); } } });
 }
 
@@ -2375,7 +2372,7 @@ function buildProps() {
    ========================================================= */
 const game = { phase: 'intro', area: 'house', stIdx: -1, queue: [], cur: null, curT: 0, ate: false, onDone: null, endShown: false };
 const whoChar = w => w === 'S' ? santa : elves[w];
-function sayLine(ch, text, anim) { if (!ch) return 3; ch.root.visible = true; const dur = clamp(1.8 + text.length * 0.055, 3.2, 9.5); ch.say(text, dur); if (anim) ch.setMode(anim, dur); return dur; }
+function sayLine(ch, text, anim) { if (!ch) return 5; ch.root.visible = true; const dur = clamp(2.2 + text.length * 0.07, 5, 13); ch.say(text, dur); if (anim) ch.setMode(anim, dur); return dur; }
 function runSeq(items, onDone) { game.queue = items.slice(); game.cur = null; game.curT = 0; game.onDone = onDone || null; nextItem(); }
 function nextItem() {
   if (game.cur && game.cur.ch) game.cur.ch.hush();
@@ -2429,17 +2426,19 @@ function startIntro() {
   game.phase = 'intro'; music.play('wish', 0.26);
   santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(0, -3.2, 0); santa.mode = 'idle'; santa.seat = null;
   elves.forEach(e => { e.root.visible = false; });
-  travel('house', 0, -0.4, 0, () => {
-    runSeq([...SCRIPT.intro.map(l => l[0] === 'enter' ? { fn: () => { magicDoor.target = 1; synth.play('magic', 0.7, 1, magicDoor.group.position); [[0, -1.5, -1.0], [7, -1.9, -0.2], [8, -2.4, -0.7]].forEach(([k, x, z], j) => { placeElf(k, new V3(-3.6, 0, -1.9), Math.PI / 2); elves[k].walkTo(x, z, 1.1, () => elves[k].setMode('wave', 1.5)); }); synth.play('jingle', 0.5); }, wait: 2.2 } : l),
+  const P0 = poseLook(0.6, 0.6, -0.7, -2.0);
+  travel('house', P0.x, P0.z, P0.yaw, () => {
+    runSeq([...SCRIPT.intro.map(l => l[0] === 'enter' ? { fn: () => { magicDoor.target = 1; synth.play('magic', 0.7, 1, magicDoor.group.position); [[0, -1.4, -1.2], [7, -0.9, -1.25], [8, -1.9, -1.6]].forEach(([k, x, z], j) => { placeElf(k, new V3(-3.6, 0, -1.9), Math.PI / 2); elves[k].walkTo(x, z, 1.1, () => { elves[k].root.rotation.y = Math.atan2(0.6 - x, 0.6 - z); elves[k].setMode('wave', 1.5); }); }); synth.play('jingle', 0.5); }, wait: 2.2 } : l),
       { fn: () => { magicDoor.target = 2; synth.play('magic', 0.8, 0.8, magicDoor.group.position); }, wait: 1.2 }], () => goStation(0));
   });
 }
 function goStation(i) {
   const st = stations[i]; game.phase = 'travel'; game.stIdx = i; hideAllBubbles();
-  const P = st.pose(); travel('factory', P.x, P.z, P.yaw, () => {
+  const P = st.pose('wide'); travel('factory', P.x, P.z, P.yaw, () => {
     game.phase = 'brief'; placeStationCast(st); board.place(st); board.update(st, game, true); music.play(i % 2 ? 'deck' : 'jingle', 0.2);
-    elves[i].mode = 'idle';
-    runSeq(SCRIPT.stations[i].intro, () => { game.phase = 'play'; });
+    elves[i].mode = 'idle'; st.cKey = undefined;
+    // dopo la spiegazione ci si avvicina ai comandi con una breve dissolvenza
+    runSeq(SCRIPT.stations[i].intro, () => { const W = st.pose('work'); travel('factory', W.x, W.z, W.yaw, () => { game.phase = 'play'; }); });
   });
 }
 function stationSolved(st) {
@@ -2447,15 +2446,16 @@ function stationSolved(st) {
   if (st.onSolve) st.onSolve(); sparkBurst(st.L(0, 1.6, -1.6), 26);
   const dancers = [st.idx, 7, 8]; dancers.forEach((k, j) => setTimeout(() => elves[k].setMode('dance', 7), j * 250));
   const items = SCRIPT.stations[st.idx].win.slice();
-  if (st.idx === 6) { items.splice(1, 0, { fn: () => { santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); const p = st.L(0.6, 0, -0.1); santa.placeAt(p.x, p.z, st.yaw + Math.PI); santa.setMode('wave', 2); sparkBurst(p.clone().setY(1.2), 30); synth.play('magic', 0.8, 1, p); }, wait: 0.6 }); }
-  runSeq([{ wait: 1.2 }, ...items, { wait: 0.5 }], () => { if (st.idx < 6) goStation(st.idx + 1); else goLiving(); });
+  if (st.idx === 6) { items.splice(1, 0, { fn: () => { santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); const p = st.L(-1.7, 0, -1.25), w = st.L(0, 0, 1.0); santa.placeAt(p.x, p.z, Math.atan2(w.x - p.x, w.z - p.z)); santa.setMode('wave', 2); sparkBurst(p.clone().setY(1.2), 30); synth.play('magic', 0.8, 1, p); }, wait: 0.6 }); }
+  const Wd = st.pose('wide');
+  runSeq([{ wait: 1.0 }, { fn: () => travel('factory', Wd.x, Wd.z, Wd.yaw), wait: 0.8 }, ...items, { wait: 0.5 }], () => { if (st.idx < 6) goStation(st.idx + 1); else goLiving(); });
 }
 function goLiving() {
   game.phase = 'living'; hideAllBubbles(); setProgress(7);
-  const P = poseLook(0.2, 0.7, 1.2, 2.0);
+  const P = poseLook(1.0, 1.3, 0.9, 2.6), face = (x, z) => Math.atan2(P.x - x, P.z - z);
   travel('house', P.x, P.z, P.yaw, () => {
-    music.play('silent', 0.24); santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(2.55, 1.0, -Math.PI / 2); santa.mode = 'idle'; santa.seat = null;
-    elves.forEach(e => e.root.visible = false); placeElf(7, new V3(-0.6, 0, 1.9), Math.PI / 2); placeElf(8, new V3(-0.1, 0, 2.6), Math.PI); placeElf(0, new V3(2.2, 0, 0.0), -0.5);
+    music.play('silent', 0.24); santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(1.85, 2.7, face(1.85, 2.7)); santa.mode = 'idle'; santa.seat = null;
+    elves.forEach(e => e.root.visible = false); placeElf(7, new V3(0.45, 0, 2.85), face(0.45, 2.85)); placeElf(8, new V3(0.0, 0, 2.5), face(0, 2.5)); placeElf(0, new V3(1.5, 0, 3.15), face(1.5, 3.15));
     game.ate = false; eaters.length || [santa, elves[7], elves[8], elves[0]].forEach(c => giveCookie(c)); eaters.forEach(e => { e.ch.mode = 'eat'; e.on = true; });
     runSeq([...SCRIPT.living, { until: () => game.ate, max: 35, skippable: true }, { wait: 1.2 }, ...SCRIPT.livingAte], () => goYard());
   });
@@ -2463,10 +2463,10 @@ function goLiving() {
 function goYard() {
   eaters.forEach(e => { e.m.visible = false; });
   game.phase = 'yard'; hideAllBubbles(); team.reset();
-  const P = poseLook(-3.3, 11.8, 0, 10.2);
+  const P = poseLook(2.4, 20.5, -2.6, 13), face = (x, z) => Math.atan2(P.x - x, P.z - z);
   travel('yard', P.x, P.z, P.yaw, () => {
-    music.play('jingle', 0.28); santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(-1.4, 8.6, 0.6); santa.mode = 'idle'; santa.seat = null;
-    elves.forEach((e, k) => { placeElf(k, new V3(2.6 + (k % 3) * 0.7, 0, 7.0 + Math.floor(k / 3) * 1.4), -Math.PI / 2 - 0.4); });
+    music.play('jingle', 0.28); santa.root.visible = true; if (santa.root.parent !== scene) scene.attach(santa.root); santa.placeAt(-4.6, 9.2, face(-4.6, 9.2)); santa.mode = 'idle'; santa.seat = null;
+    elves.forEach((e, k) => { const x = -1.2 + (k % 3) * 0.6, z = 7.2 + Math.floor(k / 3) * 1.1; placeElf(k, new V3(x, 0, z), face(x, z)); });
     const items = SCRIPT.yard.map(l => {
       if (l[0] === 'board') return { fn: () => boardSleigh(), until: () => !!santa.seat, max: 9 };
       if (l[0] === 'fly') return { fn: () => { team.takeoff(); elves.forEach((e, k) => setTimeout(() => e.setMode('cheer', 12), k * 120)); }, wait: 3.0 };
@@ -2477,7 +2477,7 @@ function goYard() {
   });
 }
 function boardSleigh() {
-  santa.walkTo(-0.95, 9.7, 1.0, () => {
+  santa.walkTo(-3.6, 9.7, 1.0, () => {
     const seat = team.sleigh.userData.seat, start = santa.root.position.clone();
     tween(0.8, u => { seat.getWorldPosition(_v4); santa.root.position.lerpVectors(start, _v4, u); santa.root.position.y += Math.sin(u * Math.PI) * 0.5; }, () => { seat.attach(santa.root); santa.root.position.set(0, 0, 0); santa.root.rotation.set(0, 0, 0); santa.seat = seat; santa.setMode('sit', 0); santa.mode = 'sit'; synth.play('jingle', 0.6); });
     synth.play('boing', 0.5, 0.8, santa.root.position);
@@ -2493,6 +2493,27 @@ function teacherGo(key) {
   const i = +key.slice(1); setProgress(i); goStation(i);
 }
 let endPanel = null;
+function coachText(st) {
+  const v = n => st.inputs[n].value, b = n => v(n) ? 1 : 0, y = st.output.value;
+  switch (st.cfg.key) {
+    case 'oven': return v('A') ? 'Sportello aperto: A = 1. La NOT lo rovescia e dà Y = 0, quindi il forno resta freddo. Chiudilo!' : 'Sportello chiuso: A = 0. La NOT rovescia lo 0 in 1: Y = 1, si scalda!';
+    case 'teddy': return v('A') && v('B') ? 'A = 1 e B = 1: l\'AND è contenta, Y = 1!' : `A = ${b('A')}, B = ${b('B')}. L'AND vuole TUTTI gli ingressi a 1: ${v('A') ? 'manca la ruota verde (B).' : v('B') ? 'manca la ruota rossa (A).' : 'gira tutte e due le ruote fino in fondo.'}`;
+    case 'train': return v('A') || v('B') ? `A = ${b('A')}, B = ${b('B')}: basta un 1 e la OR dà Y = 1!` : 'A = 0 e B = 0: con tutti zeri la OR dà 0. Premi un tasto verde!';
+    case 'wrap': return v('A') !== v('B') ? 'Chiavi diverse: la XOR dà 1 e il nastro parte!' : `Chiavi uguali, tutte e due a ${b('A')}: la XOR dà 0. Ne serve UNA sola girata.`;
+    case 'snow': return !v('A') && !v('B') ? 'Tutte e due le leve a 0: la NOR dà 1, nevica!' : `C'è ancora un 1 (${[v('A') && 'leva sinistra', v('B') && 'leva destra'].filter(Boolean).join(' e ')}). Alla NOR basta un solo 1 per dare 0: spingila via!`;
+    case 'gate': { const r1 = v('A') !== v('B'), r2 = v('C') || v('D'), r3 = !(v('A') && v('D')); if (y) return 'Tutte e tre le regole sono vere: Y = 1! Adesso aspetta 2 secondi senza toccare.'; const miss = [!r1 && (v('A') ? 'A e B sono tutti e due a 1, ne serve uno solo' : 'A e B sono tutti e due a 0, abbassane uno'), !r2 && 'serve almeno un tasto tra C e D', !r3 && 'A e D insieme non vanno bene'].filter(Boolean); return 'Quasi! ' + miss.join('; ') + '.'; }
+  }
+  return '';
+}
+function coach(st, dt) {
+  const e = elves[st.idx]; if (!e || !e.root.visible) return;
+  const key = st.names.map(n => st.inputs[n].value ? 1 : 0).join('');
+  if (st.cKey === undefined) { st.cKey = key; st.cIdle = 0; st.cWait = -1; st.cLast = 3; }
+  st.cLast += dt; st.cIdle += dt;
+  if (!st.cfg.auto && key !== st.cKey) { st.cKey = key; st.cWait = 0.8; st.cIdle = 0; }
+  if (st.cWait >= 0) { st.cWait -= dt; if (st.cWait < 0 && st.cLast > 2.5) { const t = coachText(st); if (t) { e.say(t + (Math.random() < 0.4 ? ' Guarda la riga ORA sulla lavagna.' : ''), clamp(2 + t.length * 0.06, 5, 10)); st.cLast = 0; } } }
+  if (st.cIdle > 24) { st.cIdle = 0; const steps = st.cfg.steps || []; const tip = steps[Math.min(1, steps.length - 1)]; if (tip) { e.say('Ricorda: ' + tip.charAt(0).toLowerCase() + tip.slice(1) + '!', 6); e.setMode('wave', 1.5); st.cLast = 0; } }
+}
 // piccole animazioni a tempo, aggiornate dal ciclo principale (funzionano anche dentro il visore)
 const tweens = [];
 function tween(dur, fn, done) { tweens.push({ t: 0, dur, fn, done }); }
@@ -2559,7 +2580,7 @@ function updateEaters(dt, t) {
 function helpStation() {
   const st = game.stIdx >= 0 ? stations[game.stIdx] : null; if (!st || st.solved || game.phase !== 'play') return;
   game.playT = 0; const e = elves[st.idx]; if (e) { e.say('Ti do una mano: guarda la tabella di verità, la riga con Y = 1!', 5); e.setMode('wave', 2); }
-  if (st.cfg.plug) { const P = st.panel; if (P.plugged && !P.locked) P.detach(P.plug); const ok = P.sockets.find(q => { st.root.chipType = q.type; const r = st.checkTarget(); st.root.chipType = null; return r; }); if (ok && !P.locked) P.insert(P.plug, ok); st.names.forEach(n => { st.inputs[n].value = true; }); st.devs.forEach(d => d.sync && d.sync()); return; }
+  if (st.cfg.plug) { const P = st.panel; if (P.plugged && !P.locked) P.detach(P.plug); const ok = P.sockets.find(q => { st.root.chipType = q.type; const r = st.checkTarget(); st.root.chipType = null; return r; }); if (ok && !P.locked) P.insert(P.plug, ok); return; }
   const row = st.truthRows().find(r => r.y); if (!row) return;
   st.names.forEach((n, j) => { st.inputs[n].value = !!row.bits[j]; }); st.devs.forEach(d => d.sync && d.sync());
   if (st.door) { st.door.animateTo(st.inputs.A.value ? st.door.maxA : 0); }
@@ -2843,9 +2864,10 @@ renderer.setAnimationLoop(() => {
     if (game.phase === 'play' && !cur.solved) {
       const C = cur.cfg;
       if (C.hold) { if (cur.output.value) { cur.holdT += dt; cur.msg = ['Tieni il segnale…', CSS_WAIT]; if (cur.holdT >= C.hold) { cur.holdT = C.hold; stationSolved(cur); } } else { if (cur.holdT > 0.3) { synth.play('error', 0.5); cur.msg = ['✗ Segnale interrotto! Riprova', CSS_FALSE]; } cur.holdT = 0; } }
-      else if (C.plug) { if (cur.panel.locked && cur.inputs.A.value && cur.inputs.B.value) { cur.quickT += dt; if (cur.quickT > 0.6) stationSolved(cur); } else cur.quickT = 0; }
+      else if (C.plug) { if (cur.panel.locked) { cur.quickT += dt; if (cur.quickT > 0.8) stationSolved(cur); } else cur.quickT = 0; }
       else { if (cur.output.value) { cur.quickT += dt; if (cur.quickT > 0.35) stationSolved(cur); } else cur.quickT = 0; }
     }
+    if (game.phase === 'play' && !cur.solved) coach(cur, dt);
     board.update(cur, game);
   }
   });
